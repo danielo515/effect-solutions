@@ -160,7 +160,6 @@ const program = Effect.gen(function* () {
 
 ## Validation and Transformation
 
-<!-- ts-docs-verifier:ignore -->
 ```typescript
 import { Config, ConfigError, Effect } from "effect"
 
@@ -214,7 +213,6 @@ const prefixedConfig = ConfigProvider.fromEnv().pipe(
 
 **Usage in tests:**
 
-<!-- ts-docs-verifier:ignore -->
 ```typescript
 import { Context, Effect, Layer } from "effect"
 
@@ -275,7 +273,6 @@ const program = Effect.gen(function* () {
 
 ## Example: Database Config Layer
 
-<!-- ts-docs-verifier:ignore -->
 ```typescript
 import { Config, ConfigError, Context, Effect, Layer, Redacted } from "effect"
 

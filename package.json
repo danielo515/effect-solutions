@@ -21,6 +21,8 @@
   },
   "dependencies": {
     "@effect/platform": "^0.93.3",
-    "effect": "^3.19.4"
+    "@next/mdx": "^16.0.3",
+    "effect": "^3.19.4",
+    "next-mdx-remote": "^5.0.0"
   }
 }

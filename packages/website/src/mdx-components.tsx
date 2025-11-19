@@ -6,7 +6,12 @@ import {
   type ReactNode,
 } from "react";
 import { codeToHtml } from "shiki";
-import { ArrowRight, ArrowSquareOut } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowRight,
+  ArrowSquareOut,
+  AsteriskIcon,
+  Sparkle,
+} from "@phosphor-icons/react/dist/ssr";
 import { CalloutAlignedHtml } from "@/components/mdx/CalloutAlignedHtml";
 import { FootnoteDefinitions } from "@/components/mdx/FootnoteDefinitions";
 import { FootnoteReference } from "@/components/mdx/FootnoteReference";
@@ -79,11 +84,16 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     h2: ({ children, className, ...props }) => (
       <h2
         className={cn(
-          "text-xl font-semibold leading-snug text-neutral-100 mx-6 uppercase tracking-wide",
+          "text-xl font-semibold leading-snug text-neutral-100 mx-6 uppercase tracking-wide flex items-center gap-3",
           className,
         )}
         {...props}
       >
+        <AsteriskIcon
+          size={18}
+          weight="bold"
+          className="text-neutral-500 shrink-0"
+        />
         {children}
       </h2>
     ),
@@ -112,7 +122,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ul: ({ children, className, ...props }) => (
       <ul
         className={cn(
-          "space-y-3 text-[1.05rem] text-neutral-300 mx-6 list-disc list-inside mt-6",
+          "space-y-3 text-[1.05rem] text-neutral-300 mx-6 list-[square] list-inside mt-6 marker:text-neutral-500",
           className,
         )}
         {...props}
@@ -137,8 +147,10 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       </li>
     ),
     a: ({ children, className, href, ...props }) => {
-      const isInternal = href?.startsWith('/references/') || href?.startsWith('./');
-      const isExternal = href?.startsWith('http://') || href?.startsWith('https://');
+      const isInternal =
+        href?.startsWith("/references/") || href?.startsWith("./");
+      const isExternal =
+        href?.startsWith("http://") || href?.startsWith("https://");
 
       return (
         <a
@@ -155,7 +167,11 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
           )}
           {children}
           {isExternal && (
-            <ArrowSquareOut size={16} weight="bold" className="text-blue-400/60" />
+            <ArrowSquareOut
+              size={16}
+              weight="bold"
+              className="text-blue-400/60"
+            />
           )}
         </a>
       );
