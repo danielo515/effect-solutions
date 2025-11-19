@@ -132,7 +132,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     ul: ({ children, className, ...props }) => (
       <ul
         className={cn(
-          "space-y-3 text-[1.05rem] text-neutral-300 mx-6 list-[square] list-inside marker:text-neutral-500",
+          "space-y-2 text-[1.05rem] text-neutral-300 mx-6 list-[square] list-inside marker:text-neutral-600",
           className,
         )}
         {...props}

@@ -10,7 +10,7 @@ import {
   SKILL_DOCUMENT,
 } from "./reference-manifest";
 
-describe("effect-best-practices CLI", () => {
+describe("effect-solutions CLI", () => {
   test("installs the skill locally using Effect temp directory", async () => {
     const effect = Effect.scoped(
       Effect.gen(function* () {
