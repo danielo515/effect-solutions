@@ -1,0 +1,29 @@
+{
+  "name": "effect-best-practices",
+  "version": "0.1.0",
+  "description": "CLI installer for Effect TypeScript best practices skill",
+  "type": "module",
+  "bin": {
+    "effect-best-practices": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "bun build src/cli.ts --outdir dist --target bun",
+    "dev": "bun src/cli.ts",
+    "prepare": "effect-language-service patch"
+  },
+  "dependencies": {
+    "effect": "^3.19.4",
+    "@effect/platform": "^0.69.0",
+    "@effect/platform-bun": "^0.49.0",
+    "@effect/cli": "^0.46.0"
+  },
+  "devDependencies": {
+    "@effect/language-service": "^0.56.0",
+    "@types/node": "^24.10.1",
+    "bun-types": "^1.3.2",
+    "typescript": "^5"
+  },
+  "keywords": ["effect", "typescript", "best-practices", "claude-code", "skill"],
+  "author": "Kit Langton",
+  "license": "MIT"
+}

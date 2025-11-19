@@ -1,39 +1,23 @@
 {
-  "name": "temp-next",
+  "name": "effect-best-practices",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "biome check",
-    "format": "biome format --write"
-  },
-  "dependencies": {
-    "@mdx-js/loader": "^3.1.1",
-    "@mdx-js/react": "^3.1.1",
-    "@next/mdx": "^16.0.3",
-    "@phosphor-icons/react": "^2.1.10",
-    "@tailwindcss/typography": "^0.5.19",
-    "@vercel/analytics": "^1.5.0",
-    "gray-matter": "^4.0.3",
-    "motion": "^12.23.24",
-    "next": "16.0.3",
-    "next-mdx-remote": "^5.0.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "remark-gfm": "^4.0.1",
-    "shiki": "^3.15.0",
-    "tone": "^15.1.22"
+    "dev": "bun --cwd packages/website dev",
+    "build": "bun --cwd packages/website build",
+    "start": "bun --cwd packages/website start",
+    "lint": "bun --cwd packages/website lint",
+    "format": "bun --cwd packages/website format",
+    "validate-docs": "typescript-docs-verifier --input-files packages/website/references/*.md --project tsconfig.docs.json"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.6",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "babel-plugin-react-compiler": "1.0.0",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript-docs-verifier": "^3.0.1"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.93.3",
+    "effect": "^3.19.4"
   }
 }
