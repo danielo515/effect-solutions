@@ -1,5 +1,11 @@
 # effect-solutions-mcp
 
+## 0.2.1
+
+### Patch Changes
+
+- 243af14: Remove server-minimal.ts and streamline MCP server implementation
+
 ## 0.2.0
 
 ### Minor Changes
