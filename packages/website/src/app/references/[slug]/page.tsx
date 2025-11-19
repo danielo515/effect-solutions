@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { FootnoteSidebar } from "@/components/FootnoteSidebar";
 import { FootnoteArticleShell } from "@/components/mdx/FootnoteArticleShell";
 import { dimensions } from "@/constants/dimensions";
+import { SITE_DEPLOYMENT_URL } from "@/constants/urls";
 import { FootnoteProvider } from "@/lib/footnote-context";
 import { getAllReferenceSlugs, getReferenceBySlug } from "@/lib/mdx";
 import { useMDXComponents } from "@/mdx-components";
@@ -40,7 +41,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://effect-best-practices.vercel.app/references/${slug}`,
+      url: `${SITE_DEPLOYMENT_URL}/references/${slug}`,
       siteName: "Effect Best Practices",
       locale: "en_US",
       type: "website",

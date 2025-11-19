@@ -14,6 +14,9 @@ if [[ ! -d "${REFERENCES_DIR}" ]]; then
   exit 1
 fi
 
+# Sync the CLI reference manifest with the current markdown files
+node "${ROOT_DIR}/scripts/update-reference-manifest.mjs"
+
 rm -rf "${DIST_DIR}"
 mkdir -p "${SKILL_DIR}/references"
 

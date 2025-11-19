@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { codeToHtml } from "shiki";
+import { ArrowRight, ArrowSquareOut } from "@phosphor-icons/react/dist/ssr";
 import { CalloutAlignedHtml } from "@/components/mdx/CalloutAlignedHtml";
 import { FootnoteDefinitions } from "@/components/mdx/FootnoteDefinitions";
 import { FootnoteReference } from "@/components/mdx/FootnoteReference";
@@ -135,18 +136,30 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         {children}
       </li>
     ),
-    a: ({ children, className, href, ...props }) => (
-      <a
-        href={href}
-        className={cn(
-          "text-blue-400 hover:text-blue-300 no-underline cursor-pointer",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </a>
-    ),
+    a: ({ children, className, href, ...props }) => {
+      const isInternal = href?.startsWith('/references/') || href?.startsWith('./');
+      const isExternal = href?.startsWith('http://') || href?.startsWith('https://');
+
+      return (
+        <a
+          href={href}
+          className={cn(
+            "text-blue-400 hover:text-blue-300 no-underline cursor-pointer inline-flex items-center gap-1",
+            className,
+          )}
+          {...(isExternal && { target: "_blank", rel: "noopener noreferrer" })}
+          {...props}
+        >
+          {isInternal && (
+            <ArrowRight size={16} weight="bold" className="text-blue-400/60" />
+          )}
+          {children}
+          {isExternal && (
+            <ArrowSquareOut size={16} weight="bold" className="text-blue-400/60" />
+          )}
+        </a>
+      );
+    },
     MarginAside,
     code: CodeBlock,
     pre: ({ children }) => (

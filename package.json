@@ -4,13 +4,16 @@
   "private": true,
   "type": "module",
   "main": "./index.ts",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "bun --cwd packages/website dev",
-    "build": "bun --cwd packages/website build",
-    "start": "bun --cwd packages/website start",
-    "lint": "bun --cwd packages/website lint",
-    "format": "bun --cwd packages/website format",
+    "build": "bun --filter '*' build",
+    "build:website": "bun --cwd packages/website build",
+    "build:cli": "bun --cwd packages/cli build",
+    "lint": "biome check .",
+    "format": "biome format . --write",
     "validate-docs": "typescript-docs-verifier --input-files packages/website/references/*.md --project tsconfig.docs.json"
   },
   "devDependencies": {

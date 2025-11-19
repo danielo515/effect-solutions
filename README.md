@@ -26,8 +26,7 @@ bun install
 
 ## Development
 
-- **Website:** `bun run dev` (proxied to `packages/website`), then visit
-  http://localhost:3000.
+- **Website:** `bun run dev` (proxied to `packages/website`), then visit `http://localhost:3000`.
 - **CLI:** `bun --cwd packages/cli dev` runs the installer locally.
 
 Useful scripts from the project root:

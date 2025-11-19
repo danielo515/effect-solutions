@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ReferenceList } from "@/components/ReferenceList";
 import { getAllReferences } from "@/lib/mdx";
+import { SITE_DEPLOYMENT_URL } from "@/constants/urls";
 
 export const metadata: Metadata = {
   title: "References",
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
     title: "Effect Best Practices",
     description:
       "Best practices and reference guides for building Effect TypeScript applications",
-    url: "https://effect-best-practices.vercel.app/references",
+    url: `${SITE_DEPLOYMENT_URL}/references`,
     siteName: "Effect Best Practices",
     locale: "en_US",
     type: "website",

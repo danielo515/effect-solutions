@@ -124,7 +124,7 @@
 .prose pre + h2,
 .prose code + h2,
 .prose div + h2 {
-  margin-top: 3rem;
+  margin-top: 4.5rem;
 }
 
 .prose p + h3,
@@ -134,7 +134,7 @@
 .prose pre + h3,
 .prose code + h3,
 .prose div + h3 {
-  margin-top: 2rem;
+  margin-top: 3.5rem;
 }
 
 /* Remove top margin when heading follows hr or another heading */
@@ -147,6 +147,20 @@
 .prose h2 + h3,
 .prose h3 + h3 {
   margin-top: 0rem;
+}
+
+/* Add spacing above headings when they follow code blocks (.not-prose divs) */
+.prose .not-prose + h2 {
+  margin-top: 4.5rem;
+}
+
+.prose .not-prose + h3 {
+  margin-top: 3.5rem;
+}
+
+/* Ensure code blocks have bottom margin */
+.prose .not-prose {
+  margin-bottom: 2rem;
 }
 
 /* Paragraph spacing */

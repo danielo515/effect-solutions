@@ -5,6 +5,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { SoundSettingsProvider } from "@/lib/useSoundSettings";
+import { SITE_URL } from "@/constants/urls";
 
 const commitMono = localFont({
   src: "../../public/fonts/commit-mono/CommitMono-Variable.ttf",
@@ -21,7 +22,7 @@ const siteDescription =
   "Effect Institute publishes hands-on lessons for building resilient TypeScript applications with Effect.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://effect.institute"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: siteName,
     template: `%s | ${siteName}`,

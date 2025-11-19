@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
+import { KIT_TWITTER_URL } from "@/constants/urls";
 
 export function LessonFooter() {
   const pathname = usePathname();
@@ -31,7 +32,7 @@ export function LessonFooter() {
           <div />
         )}
         <Link
-          href="https://x.com/kitlangton"
+          href={KIT_TWITTER_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none cursor-default"
