@@ -9,7 +9,6 @@
   ],
   "scripts": {
     "dev": "bun --cwd packages/website dev",
-    "dev:content": "bun --cwd packages/website dev:content",
     "build": "bun --filter '*' build",
     "build:website": "bun --cwd packages/website build",
     "build:cli": "bun --cwd packages/cli build",

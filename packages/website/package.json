@@ -5,8 +5,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "scripts": {
-    "dev": "next dev",
-    "dev:content": "bun dev & bun run watch:content",
+    "dev": "bun ./scripts/dev-server.ts",
     "watch:content": "bun ./scripts/content-watcher.ts",
     "build": "next build",
     "start": "next start",
