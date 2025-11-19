@@ -55,10 +55,12 @@ function getCalloutAnchor(annotation: Annotation, lineText: string): number {
     const raw = annotation.selector.value;
     if (raw) {
       const [startRaw, endRaw] = raw.split(":");
-      const start = Number.parseInt(startRaw, 10);
-      const end = endRaw ? Number.parseInt(endRaw, 10) : start;
-      if (Number.isFinite(start) && Number.isFinite(end)) {
-        return start + (end - start) / 2;
+      if (startRaw !== undefined) {
+        const start = Number.parseInt(startRaw, 10);
+        const end = endRaw ? Number.parseInt(endRaw, 10) : start;
+        if (Number.isFinite(start) && Number.isFinite(end)) {
+          return start + (end - start) / 2;
+        }
       }
     }
   }
@@ -121,6 +123,7 @@ export function transformerAnnotations(): ShikiTransformer {
       // First pass: find all annotations
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
+        if (line === undefined) continue;
         const match = line.match(annotationRegex);
 
         if (match) {
@@ -156,22 +159,25 @@ export function transformerAnnotations(): ShikiTransformer {
 
           // Find target line (next non-annotation line)
           let targetLine = i + 1;
-          while (
-            targetLine < lines.length &&
-            annotationRegex.test(lines[targetLine])
-          ) {
+          while (targetLine < lines.length) {
+            const nextLine = lines[targetLine];
+            if (nextLine === undefined) break;
+            if (!annotationRegex.test(nextLine)) break;
             targetLine++;
           }
 
-          if (targetLine < lines.length) {
+          if (targetLine < lines.length && directive !== undefined) {
             const id = `${directive}-${annotations.length}`;
-            annotations.push({
+            const annotation: Annotation = {
               type: directive,
-              selector,
               content: content || "",
               targetLine, // Store original line number, we'll adjust later
               id,
-            });
+            };
+            if (selector !== undefined) {
+              annotation.selector = selector;
+            }
+            annotations.push(annotation);
           }
         }
       }
@@ -208,9 +214,11 @@ export function transformerAnnotations(): ShikiTransformer {
       const lineAnnotations = annotations.filter((a) => {
         if (a.selector?.type === "lineRange") {
           const parts = a.selector.value.split(":");
-          const start = Number.parseInt(parts[0], 10);
-          const end = parts[1] ? Number.parseInt(parts[1], 10) : start;
-          return line >= start && line <= end;
+          if (parts[0] !== undefined) {
+            const start = Number.parseInt(parts[0], 10);
+            const end = parts[1] ? Number.parseInt(parts[1], 10) : start;
+            return line >= start && line <= end;
+          }
         }
         return a.targetLine === line - 1;
       });
@@ -299,6 +307,7 @@ export function transformerAnnotations(): ShikiTransformer {
         if (!pattern) continue;
         const regex = new RegExp(pattern);
         const lineText = codeLines[line - 1];
+        if (lineText === undefined) continue;
 
         // Check if the regex matches within this token's range
         const tokenTextInLine = lineText.substring(col, tokenEnd);

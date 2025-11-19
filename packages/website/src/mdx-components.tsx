@@ -227,9 +227,11 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
             return (
               <FootnoteReference
                 footnoteId={footnoteId}
-                anchorId={anchorId}
+                {...(anchorId !== undefined ? { anchorId } : {})}
                 href={href || `#fn-${footnoteId}`}
-                ariaDescribedBy={ariaDescribedBy}
+                {...(ariaDescribedBy !== undefined
+                  ? { ariaDescribedBy }
+                  : {})}
               >
                 {child.props.children}
               </FootnoteReference>

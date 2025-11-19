@@ -65,6 +65,9 @@ export function MarginAside({
       registerAside({
         id: noteId,
         element: null,
+        content: undefined,
+        anchorId: undefined,
+        label: undefined,
       });
     };
   }, [noteId, registerAside, label]);

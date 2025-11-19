@@ -20,7 +20,7 @@ describe("effect-best-practices CLI", () => {
 
         const tempRoot = yield* fs.makeTempDirectory({ prefix: "cli-test" });
         yield* Effect.addFinalizer(() =>
-          fs.remove(tempRoot, { recursive: true }),
+          fs.remove(tempRoot, { recursive: true }).pipe(Effect.ignore),
         );
 
         const projectDir = path.join(tempRoot, "project");
