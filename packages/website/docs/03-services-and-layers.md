@@ -73,7 +73,94 @@ Benefits:
 
 - Service contracts are explicit before any concrete layers exist.
 - You can model orchestration logic and types in isolation.
-- Adding mocks or production implementations later doesn’t change call sites.
+- Adding mocks or production implementations later doesn't change call sites.
+
+## Mock Implementations
+
+When designing with services first, create lightweight mock implementations for testing. Use `Effect.sync` or `Effect.succeed` when your mock doesn't need async operations or effects.
+
+```typescript
+import { Context, Effect, Layer } from "effect"
+
+class Database extends Context.Tag("@app/Database")<
+  Database,
+  {
+    readonly query: (sql: string) => Effect.Effect<unknown[]>
+    readonly execute: (sql: string) => Effect.Effect<void>
+  }
+>() {
+  // Mock using in-memory state
+  static readonly mockLayer = Layer.sync(Database, () => {
+    let records: Record<string, unknown> = {
+      "user-1": { id: "user-1", name: "Alice" },
+      "user-2": { id: "user-2", name: "Bob" }
+    }
+
+    return Database.of({
+      query: (sql) => Effect.succeed(Object.values(records)),
+      execute: (sql) => Effect.sync(() => {
+        // Parse and mutate records in-memory
+        console.log(`Mock execute: ${sql}`)
+      })
+    })
+  })
+
+  // Production using Effect.gen for async operations
+  static readonly layer = Layer.effect(
+    Database,
+    Effect.gen(function* () {
+      const pool = yield* createConnectionPool()
+
+      return Database.of({
+        query: (sql) => Effect.tryPromise(() => pool.query(sql)),
+        execute: (sql) => Effect.tryPromise(() => pool.execute(sql))
+      })
+    })
+  )
+}
+
+class Cache extends Context.Tag("@app/Cache")<
+  Cache,
+  {
+    readonly get: (key: string) => Effect.Effect<string | null>
+    readonly set: (key: string, value: string) => Effect.Effect<void>
+  }
+>() {
+  // Mock with Map
+  static readonly mockLayer = Layer.sync(Cache, () => {
+    const store = new Map<string, string>()
+
+    return Cache.of({
+      get: (key) => Effect.succeed(store.get(key) ?? null),
+      set: (key, value) => Effect.sync(() => void store.set(key, value))
+    })
+  })
+
+  // Production
+  static readonly layer = Layer.effect(
+    Cache,
+    Effect.gen(function* () {
+      const redis = yield* connectToRedis()
+
+      return Cache.of({
+        get: (key) => Effect.tryPromise(() => redis.get(key)),
+        set: (key, value) => Effect.tryPromise(() => redis.set(key, value))
+      })
+    })
+  )
+}
+```
+
+**Layer naming:**
+- All layer properties end with `Layer` suffix
+- Use `layer` for the production implementation
+- Use `mockLayer`, `testLayer`, etc. for test variants
+- Use `liveLayer`, `legacyLayer`, etc. only when multiple production variants exist
+
+**When to use each constructor:**
+- `Layer.sync()` - synchronous setup, returns service immediately
+- `Layer.effect()` - async setup or needs to yield from other services
+- `Layer.succeed()` - static service with no setup logic
 
 ## Layer Composition
 
