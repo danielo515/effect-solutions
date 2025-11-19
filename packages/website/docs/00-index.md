@@ -15,7 +15,7 @@ Whether you're starting a new Effect project or integrating Effect into an exist
 ### Claude Code MCP CLI
 
 ```bash
-claude mcp add effect-solutions -- bunx effect-solutions-mcp
+claude mcp add effect-solutions -- bunx effect-solutions-mcp@latest
 ```
 
 This registers the server for the current workspace only; append `--scope user` if you want Claude Code to launch `effect-solutions` in every repo automatically.
@@ -23,7 +23,7 @@ This registers the server for the current workspace only; append `--scope user` 
 ### Codex CLI Setup
 
 ```bash
-codex mcp add effect-solutions -- bunx effect-solutions-mcp
+codex mcp add effect-solutions -- bunx effect-solutions-mcp@latest
 ```
 
 Codex stores MCP entries globally in `~/.codex/config.toml`; edit that file (or re-run `codex mcp add --scope local …`) if you need per-project overrides. Use `/mcp run effect-solutions <resource>` to fetch docs on demand.
@@ -32,10 +32,10 @@ Codex stores MCP entries globally in `~/.codex/config.toml`; edit that file (or 
 
 ```bash
 # List topics
-bunx effect-solutions list
+bunx effect-solutions@latest list
 
 # Show specific topics
-bunx effect-solutions show project-setup tsconfig
+bunx effect-solutions@latest show project-setup tsconfig
 ```
 
 ## Core Topics

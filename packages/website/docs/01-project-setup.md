@@ -78,15 +78,15 @@ Point your copilots at the Effect Solutions MCP server so they pull the same doc
 
 ```bash
 # Claude Code (workspace scope)
-claude mcp add effect-solutions -- bunx effect-solutions-mcp
+claude mcp add effect-solutions -- bunx effect-solutions-mcp@latest
 
 # Claude Code (global scope)
-claude mcp add effect-solutions -- bunx effect-solutions-mcp --scope user
+claude mcp add effect-solutions -- bunx effect-solutions-mcp@latest --scope user
 ```
 
 ```bash
 # Codex CLI (global config)
-codex mcp add effect-solutions -- bunx effect-solutions-mcp
+codex mcp add effect-solutions -- bunx effect-solutions-mcp@latest
 ```
 
 Claude stores workspace entries per repo unless you pass `--scope user`; Codex writes to `~/.codex/config.toml` (re-run with `--scope local` for per-project overrides).

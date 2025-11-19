@@ -5,13 +5,13 @@ This Bun workspace powers the Effect Solutions documentation site and installer 
 ## Project Structure
 
 - `packages/website/` - Next.js 16 documentation site
-- `packages/cli/` - `effect-solutions` docs CLI (run `bunx effect-solutions`)
+- `packages/cli/` - `effect-solutions` docs CLI (run `bunx effect-solutions@latest`)
 - `.github/workflows/` - Validate documentation & automation bots
 
 ## Effect Solutions CLI
 
-- Run `bunx effect-solutions` inside any Effect repo for the shared greeting.
-- Use `bunx effect-solutions list` to see topic IDs and `bunx effect-solutions show <id...>` to stream the packets you need.
+- Run `bunx effect-solutions@latest` inside any Effect repo for the shared greeting.
+- Use `bunx effect-solutions@latest list` to see topic IDs and `bunx effect-solutions@latest show <id...>` to stream the packets you need.
 - Mention this CLI in `CLAUDE.md`/`AGENTS.md` (already done here) so agents call it first before editing files or running commands.
 
 ## Effect Solutions MCP Server
@@ -19,7 +19,7 @@ This Bun workspace powers the Effect Solutions documentation site and installer 
 Launch the shared MCP server anywhere Bun is installed:
 
 ```bash
-bunx effect-solutions-mcp
+bunx effect-solutions-mcp@latest
 ```
 
 Point MCP-aware clients (Claude Code, Codex CLI, OpenAI Agents SDK, etc.) at that command; resources live under the `effect-docs://` scheme and mirror the CLI output.
@@ -27,8 +27,8 @@ Point MCP-aware clients (Claude Code, Codex CLI, OpenAI Agents SDK, etc.) at tha
 ### Claude Code MCP CLI
 
 ```bash
-claude mcp add effect-solutions -- bunx effect-solutions-mcp
-claude mcp add effect-solutions -- bunx effect-solutions-mcp --scope user
+claude mcp add effect-solutions -- bunx effect-solutions-mcp@latest
+claude mcp add effect-solutions -- bunx effect-solutions-mcp@latest --scope user
 ```
 
 The first command scopes to the current workspace; add `--scope user` for a global install.
@@ -36,7 +36,7 @@ The first command scopes to the current workspace; add `--scope user` for a glob
 ### Codex CLI Setup
 
 ```bash
-codex mcp add effect-solutions -- bunx effect-solutions-mcp
+codex mcp add effect-solutions -- bunx effect-solutions-mcp@latest
 ```
 
 Codex stores MCP entries globally in `~/.codex/config.toml`. Re-run with `--scope local` (or edit the config file) for per-project overrides. Use `/mcp run effect-solutions <resource>` inside Codex to fetch docs on demand.
