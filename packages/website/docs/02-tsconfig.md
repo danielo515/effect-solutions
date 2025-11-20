@@ -76,13 +76,12 @@ Effect projects benefit from strict TypeScript configuration. Reference configur
 ```jsonc
 "plugins": [
   {
-    "name": "@effect/language-service",
-    "transform": "@effect/language-service/transform"
+    "name": "@effect/language-service"
   }
 ]
 ```
 
-Enables Effect language service for diagnostics and transforms.
+Enables Effect language service for editor diagnostics. For build-time diagnostics, run `bunx effect-language-service patch` (see [Project Setup](./01-project-setup.md)).
 
 ## Why These Settings?
 
