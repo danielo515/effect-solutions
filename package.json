@@ -19,6 +19,8 @@
     "publish:cli": "cd packages/cli && bun publish",
     "publish:mcp": "cd packages/mcp && bun publish",
     "publish:all": "bun run publish:cli && bun run publish:mcp",
+    "generate:og": "cd packages/website && bun run generate:og",
+    "deploy:vercel": "bun run generate:og && vercel build && vercel deploy --prebuilt --prod",
     "changeset": "changeset",
     "changeset:empty": "changeset add --empty",
     "version": "changeset version && bun install",
@@ -40,5 +42,6 @@
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.7"
-  }
+  },
+  "packageManager": "pnpm@10.17.1+sha512.17c560fca4867ae9473a3899ad84a88334914f379be46d455cbf92e5cf4b39d34985d452d2583baf19967fa76cb5c17bc9e245529d0b98745721aa7200ecaf7a"
 }
