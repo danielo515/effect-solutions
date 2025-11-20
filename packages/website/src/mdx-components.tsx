@@ -76,7 +76,11 @@ async function CodeBlock({
   }
 }
 
-export function useMDXComponents(components: MDXComponents): MDXComponents {
+export function useMDXComponents(
+  components: MDXComponents & { instructions?: string },
+): MDXComponents {
+  const { instructions, ...restComponents } = components;
+
   return {
     h1: ({ children, className, ...props }) => (
       <h1
@@ -166,7 +170,9 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     a: MDXLink,
     MarginAside,
     DraftNote,
-    LLMInstructionsButton,
+    LLMInstructionsButton: instructions
+      ? () => <LLMInstructionsButton instructions={instructions} />
+      : LLMInstructionsButton,
     CursorInstallButton,
     code: CodeBlock,
     pre: ({ children }) => (
@@ -239,6 +245,6 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       <MarginAside {...props}>{children}</MarginAside>
     ),
 
-    ...components,
+    ...restComponents,
   };
 }

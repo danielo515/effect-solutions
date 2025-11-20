@@ -12,6 +12,7 @@ import {
   getDocBySlug,
   normalizeDocSlug,
 } from "@/lib/mdx";
+import { generateLLMInstructions } from "@/lib/llm-instructions";
 import { useMDXComponents } from "@/mdx-components";
 
 interface DocPageProps {
@@ -38,6 +39,7 @@ export async function generateMetadata({
 
   const title = `${doc.title} - Effect Solutions`;
   const description = doc.description || doc.title;
+  const ogImage = `${SITE_DEPLOYMENT_URL}/og/${doc.slug}.png`;
 
   return {
     title,
@@ -49,11 +51,20 @@ export async function generateMetadata({
       siteName: "Effect Solutions",
       locale: "en_US",
       type: "website",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: doc.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [ogImage],
     },
   };
 }
@@ -66,7 +77,8 @@ export default async function DocPage({ params }: DocPageProps) {
     notFound();
   }
 
-  const components = useMDXComponents({});
+  const instructions = generateLLMInstructions();
+  const components = useMDXComponents({ instructions });
 
   return (
     <main className="mx-auto max-w-screen-md border-x border-neutral-800 flex-1 w-full min-h-[calc(100vh-8rem)]">

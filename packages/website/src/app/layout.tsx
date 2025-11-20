@@ -1,29 +1,8 @@
-import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google";
-import localFont from "next/font/local";
-import { AutoRefresh } from "@/components/AutoRefresh";
-import { CommandPalette } from "@/components/CommandPalette";
-import { DocFooter } from "@/components/DocFooter";
-import { DocHeader } from "@/components/DocHeader";
+import type { ReactNode } from "react";
 import { SITE_URL } from "@/constants/urls";
-import {
-  getDocSearchDocuments,
-  serializeSearchDocuments,
-} from "@/lib/doc-search";
-import { getDocTitles, getOrderedDocSlugs } from "@/lib/mdx";
-import { SoundSettingsProvider } from "@/lib/useSoundSettings";
+import { commitMono, geistMono } from "@/lib/fonts";
 import "./globals.css";
-
-const commitMono = localFont({
-  src: "../../public/fonts/commit-mono/CommitMono-Variable.ttf",
-  variable: "--font-commit-mono",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const siteName = "Effect Solutions";
 const siteDescription =
@@ -72,25 +51,14 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
-  const documents = serializeSearchDocuments(getDocSearchDocuments());
-  const docTitles = getDocTitles();
-  const orderedSlugs = getOrderedDocSlugs();
-
   return (
     <html lang="en">
       <body
-        className={`${commitMono.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
+        className={`${commitMono.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <CommandPalette documents={documents} />
-        <AutoRefresh />
-        <SoundSettingsProvider>
-          <DocHeader docTitles={docTitles} />
-          {children}
-          <DocFooter docTitles={docTitles} orderedSlugs={orderedSlugs} />
-        </SoundSettingsProvider>
-        <Analytics />
+        {children}
       </body>
     </html>
   );

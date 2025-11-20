@@ -15,12 +15,21 @@ export const metadata: Metadata = {
     siteName: "Effect Solutions",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: `${SITE_DEPLOYMENT_URL}/og/home.png`,
+        width: 1200,
+        height: 630,
+        alt: "Effect Solutions",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Effect Solutions",
     description:
       "Effect Solutions guides for building Effect TypeScript applications",
+    images: [`${SITE_DEPLOYMENT_URL}/og/home.png`],
   },
 };
 
