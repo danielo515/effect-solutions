@@ -17,7 +17,6 @@
     "build:mcp": "bun --cwd packages/mcp build",
     "generate:manifest": "bun --cwd packages/cli run generate:manifest",
     "generate:og": "cd packages/website && bun run generate:og",
-    "deploy:vercel": "bun run generate:og && vercel build && vercel deploy --prebuilt --prod",
     "changeset": "changeset",
     "changeset:empty": "changeset add --empty",
     "version": "changeset version && bun install",

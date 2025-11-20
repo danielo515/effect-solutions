@@ -26,14 +26,11 @@ bun run dev:mcp      # MCP server dev mode
 bun run check        # Lint & typecheck
 bun run format       # Format code
 bun --cwd packages/website run generate:og  # Rebuild Open Graph images
-bun run deploy:vercel # Generate OGs, build locally, deploy to Vercel prod
 ```
 
 ### Open Graph Images
 
-The Playwright generator lives at `packages/website/scripts/generate-og.ts` and renders the static template in `packages/website/public/og/template.html`. Run `bun --cwd packages/website run generate:og` to refresh every image (or `OG_ONLY=slug1,slug2 bun --cwd packages/website run generate:og` to target a subset). The resulting PNGs are written to `packages/website/public/og/` and referenced automatically in the Next.js metadata.
-
-When deploying via the Vercel CLI, use `bun run deploy:vercel`. That script regenerates OG assets, performs a local `vercel build`, and then uploads the prebuilt output with `vercel deploy --prebuilt --prod`, so the fresh PNGs are guaranteed to be part of the release even before they're committed.
+The Playwright generator lives at `packages/website/scripts/generate-og.ts` and renders the static template in `packages/website/src/app/og/template/page.tsx`. Run `bun --cwd packages/website run generate:og` to refresh every image (or `OG_ONLY=slug1,slug2 bun --cwd packages/website run generate:og` to target a subset). The resulting PNGs are written to `packages/website/public/og/` and referenced automatically in the Next.js metadata.
 
 ## Changesets & Publishing
 
@@ -122,11 +119,7 @@ Configure in Claude Desktop via:
 
 ## Deployment
 
-Website deploys automatically via Vercel on push to `main`. For manual deploys:
-
-```bash
-bun run deploy:vercel  # Rebuild OG images, build, deploy
-```
+Website deploys automatically via Vercel on push to `main`.
 
 CLI and MCP packages publish to npm via changesets workflow:
 
