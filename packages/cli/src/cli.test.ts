@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { renderDocList, renderDocs } from "./cli";
+import {
+  getCollectLog,
+  openIssue,
+  resetCollectLog,
+} from "./open-issue-service";
 import { DOCS } from "./docs-manifest";
 
 describe("effect-solutions CLI docs", () => {
@@ -31,5 +36,25 @@ describe("effect-solutions CLI docs", () => {
 
   test("show rejects unknown doc slugs", () => {
     expect(() => renderDocs(["unknown-doc"])).toThrowError(/Unknown doc slug/);
+  });
+
+  test("open issue uses collect strategy and logs url", () => {
+    resetCollectLog();
+    const result = openIssue({
+      category: "Fix",
+      title: "Broken link",
+      description: "Example body",
+      strategy: "collect",
+    });
+
+    expect(result.issueUrl).toContain(
+      "https://github.com/kitlangton/effect-solutions/issues/new",
+    );
+    expect(result.openedWith).toBe("collect");
+    expect(result.opened).toBe(true);
+
+    const log = getCollectLog();
+    expect(log.length).toBe(1);
+    expect(log[0]).toBe(result.issueUrl);
   });
 });

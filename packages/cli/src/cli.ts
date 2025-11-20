@@ -4,8 +4,14 @@ import { BunContext, BunRuntime } from "@effect/platform-bun";
 import { Console, Effect, pipe } from "effect";
 import { Args, Command } from "@effect/cli";
 import { DOC_LOOKUP, DOCS } from "./docs-manifest";
+import {
+  BrowserOpenStrategy,
+  OpenIssueCategory,
+  openIssue,
+} from "./open-issue-service";
 import pc from "picocolors";
 import pkg from "../package.json" with { type: "json" };
+import { maybeNotifyUpdate } from "./update-notifier";
 
 const CLI_NAME = "effect-solutions";
 const CLI_VERSION = pkg.version;
@@ -104,12 +110,43 @@ const showCommand = Command.make("show", {
   Command.withHandler(({ slugs }) => showDocs(slugs)),
 );
 
+const openIssueCommand = Command.make("open-issue", {
+  category: Args.text({
+    name: "category",
+    description: "Topic Request | Fix | Improvement",
+  }),
+  title: Args.text({ name: "title" }),
+  description: Args.text({ name: "description" }),
+  strategy: Args.text({ name: "strategy", optional: true }),
+}).pipe(
+  Command.withDescription(
+    "Open a pre-filled GitHub issue in the effect-solutions repo",
+  ),
+  Command.withHandler(({ category, title, description, strategy }) =>
+    Effect.sync(() => {
+      const result = openIssue({
+        category: category as OpenIssueCategory,
+        title,
+        description,
+        strategy: strategy as BrowserOpenStrategy | undefined,
+      });
+      const lines = [
+        pc.bold("Effect Solutions issue"),
+        `URL: ${pc.cyan(result.issueUrl)}`,
+        `Opened: ${result.opened ? pc.green("yes") : pc.yellow("no")} (${result.openedWith})`,
+        result.message,
+      ];
+      return Console.log(lines.join("\n"));
+    }),
+  ),
+);
+
 export const cli = Command.make(CLI_NAME).pipe(
   Command.withDescription(
     "Effect Solutions CLI - Browse and search Effect best practices documentation. " +
       "Built for both humans and AI agents to quickly access Effect patterns, setup guides, and configuration examples.",
   ),
-  Command.withSubcommands([listCommand, showCommand]),
+  Command.withSubcommands([listCommand, showCommand, openIssueCommand]),
 );
 
 export const runCli = (argv: ReadonlyArray<string>) =>
@@ -120,7 +157,8 @@ export const runCli = (argv: ReadonlyArray<string>) =>
 
 if (import.meta.main) {
   pipe(
-    runCli(process.argv),
+    maybeNotifyUpdate(CLI_NAME, CLI_VERSION),
+    Effect.zipRight(runCli(process.argv)),
     Effect.provide(BunContext.layer),
     BunRuntime.runMain,
   );
