@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { DOC_LOOKUP, DOCS } from "../../cli/src/docs-manifest";
+import { openIssue as openIssueService } from "../../cli/src/open-issue-service";
 import { McpSchema, McpServer, Tool, Toolkit } from "@effect/ai";
 import { BunRuntime, BunSink, BunStream } from "@effect/platform-bun";
 import { Effect, Layer, Schema } from "effect";
@@ -10,43 +11,33 @@ const SERVER_NAME = "effect-solutions";
 const SERVER_VERSION = pkg.version;
 const docCompletionValues = DOCS.map((doc) => doc.slug);
 
-const openInBrowser = (url: string) => {
-  const platform = process.platform;
-  let command: string[] | null = null;
-
-  if (platform === "darwin") {
-    command = ["open", url];
-  } else if (platform === "win32") {
-    command = ["cmd", "/c", "start", "", url];
-  } else {
-    command = ["xdg-open", url];
-  }
-
-  try {
-    const child = Bun.spawn(command, {
-      stdout: "ignore",
-      stderr: "ignore",
-    });
-    void child.exited;
-  } catch {
-    // Ignore failures—URL is still returned to the caller.
-  }
-};
-
-const lookupDocMarkdown = (slug: string) =>
-  Effect.try(() => {
-    const doc = DOC_LOOKUP[slug];
-    if (!doc) {
-      throw new Error(`Unknown doc slug: ${slug}`);
-    }
-    return `# ${doc.title} (${doc.slug})\n\n${doc.body}`.trimEnd();
-  });
-
 const listMarkdown = [
   "# Effect Solutions Documentation Index",
   "",
   ...DOCS.map((doc) => `- **${doc.slug}** — ${doc.title}: ${doc.description}`),
 ].join("\n");
+
+const topicsResourceContent = {
+  contents: [
+    {
+      uri: "effect-docs://docs/topics",
+      mimeType: "text/markdown",
+      text: listMarkdown,
+    },
+  ],
+} as const;
+
+const lookupDocMarkdown = (slug: string) =>
+  // Special-case the index so it always resolves (even if the template route matches).
+  slug === "topics"
+    ? Effect.succeed(topicsResourceContent)
+    : Effect.try(() => {
+        const doc = DOC_LOOKUP[slug];
+        if (!doc) {
+          throw new Error(`Unknown doc slug: ${slug}`);
+        }
+        return `# ${doc.title} (${doc.slug})\n\n${doc.body}`.trimEnd();
+      });
 
 const docSlugParam = McpSchema.param("slug", Schema.String);
 
@@ -55,7 +46,7 @@ const DocsIndexResource = McpServer.resource({
   name: "Effect Solutions Topics",
   description: "Markdown index of all Effect Solutions documentation slugs.",
   mimeType: "text/markdown",
-  content: Effect.succeed(listMarkdown),
+  content: Effect.succeed(topicsResourceContent),
 });
 
 const DocsTemplate = McpServer.resource`effect-docs://docs/${docSlugParam}`({
@@ -121,6 +112,8 @@ const OpenIssueTool = Tool.make("open_issue", {
       description: "GitHub issue URL with pre-filled content",
     }),
     message: Schema.String,
+    opened: Schema.Boolean,
+    openedWith: Schema.String,
   }),
 });
 
@@ -194,23 +187,13 @@ const searchDocs = ({ query }: { query: string }) =>
   });
 
 const openIssue = ({ category, title, description }: { category: "Topic Request" | "Fix" | "Improvement"; title: string; description: string }) =>
-  Effect.sync(() => {
-    const repoUrl = "https://github.com/kitlangton/effect-solutions";
-    const fullTitle = `[${category}] ${title}`;
-    const body = `## Description\n\n${description}\n\n---\n*Created via [Effect Solutions MCP](${repoUrl})*`;
-
-    const issueUrl = `${repoUrl}/issues/new?${new URLSearchParams({
-      title: fullTitle,
-      body,
-    }).toString()}`;
-
-    openInBrowser(issueUrl);
-
-    return {
-      issueUrl,
-      message: `Opened GitHub issue in browser: ${issueUrl}`,
-    };
-  });
+  Effect.sync(() =>
+    openIssueService({
+      category,
+      title,
+      description,
+    }),
+  );
 
 const getHelp = () =>
   Effect.succeed({

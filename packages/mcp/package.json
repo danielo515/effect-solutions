@@ -9,6 +9,7 @@
   "scripts": {
     "build": "bun build src/server.ts --outdir dist --target bun",
     "build:exe": "bun build src/server.ts --compile --outfile dist/effect-solutions-mcp",
+    "test": "bun test",
     "prepublishOnly": "rm -rf dist && bun run build && bun run build:exe",
     "dev": "bun src/server.ts",
     "prepare": "[ -n \"$CI\" ] || bunx effect-language-service patch"
