@@ -178,8 +178,8 @@ const decodeUser = Schema.decodeUnknownEffect(User)
 const encodeUser = Schema.encodeEffect(User)
 
 const program = Effect.gen(function* () {
-  const raw = JSON.parse('{"id":"user-1","name":"Lina","email":"lina@example.com"}')
-  const user = yield* decodeUser(raw) // fails with ConfigError on invalid payload
+  const raw = JSON.parse('{"id":"user-1","name":"Lina","email":"lina@example.com","createdAt":"2025-01-01T00:00:00.000Z"}')
+  const user = yield* decodeUser(raw) // fails with ParseError on invalid payload
 
   const jsonReady = yield* encodeUser(user) // typed as typeof User.Encoded
   const json = JSON.stringify(jsonReady)

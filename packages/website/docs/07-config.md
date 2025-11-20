@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: "Effect Config usage, providers, and Live/Test layers"
+description: "Effect Config usage, providers, and layer patterns"
 order: 7
 ---
 
@@ -66,7 +66,7 @@ Effect.runPromise(program.pipe(Effect.provide(TestConfigLayer)))
 
 ## Recommended Pattern: Config Layers
 
-**Best practice:** Create a config service with a `Live` layer:
+**Best practice:** Create a config service with a `layer` export:
 
 ```typescript
 import { Config, Context, Effect, Layer, Redacted } from "effect"
@@ -79,7 +79,7 @@ class ApiConfig extends Context.Tag("ApiConfig")<
     readonly timeout: number
   }
 >() {
-  static readonly Live = Layer.effect(
+  static readonly layer = Layer.effect(
     ApiConfig,
     Effect.gen(function* () {
       const apiKey = yield* Config.redacted("API_KEY")
@@ -95,7 +95,7 @@ class ApiConfig extends Context.Tag("ApiConfig")<
   )
 
   // For tests - hardcoded values
-  static readonly Test = Layer.succeed(
+  static readonly testLayer = Layer.succeed(
     ApiConfig,
     ApiConfig.of({
       apiKey: Redacted.make("test-key"),
@@ -108,7 +108,7 @@ class ApiConfig extends Context.Tag("ApiConfig")<
 
 **Why this pattern?**
 - Separates config loading from business logic
-- Easy to swap implementations (Live vs Test)
+- Easy to swap implementations (layer vs testLayer)
 - Config errors caught early at layer composition
 - Type-safe throughout your app
 
@@ -224,7 +224,7 @@ Combine provider overrides with dedicated test layers for your config services:
 import { Config, ConfigProvider, Context, Effect, Layer, Redacted } from "effect"
 
 class ApiConfig extends Context.Tag("ApiConfig")<ApiConfig, { apiKey: Redacted.Redacted }>() {
-  static readonly Live = Layer.effect(
+  static readonly layer = Layer.effect(
     ApiConfig,
     Effect.gen(function* () {
       const apiKey = yield* Config.redacted("API_KEY")
@@ -232,7 +232,7 @@ class ApiConfig extends Context.Tag("ApiConfig")<ApiConfig, { apiKey: Redacted.R
     })
   )
 
-  static readonly Test = Layer.succeed(ApiConfig, ApiConfig.of({ apiKey: Redacted.make("test-key") }))
+  static readonly testLayer = Layer.succeed(ApiConfig, ApiConfig.of({ apiKey: Redacted.make("test-key") }))
 }
 
 const TestConfigProvider = Layer.setConfigProvider(
@@ -245,13 +245,13 @@ const program = Effect.gen(function* () {
 })
 
 // Production
-Effect.runPromise(program.pipe(Effect.provide(ApiConfig.Live)))
+Effect.runPromise(program.pipe(Effect.provide(ApiConfig.layer)))
 
-// Tests - override the provider + use the Test layer for dependencies
+// Tests - override the provider + use the testLayer for dependencies
 Effect.runPromise(
   program.pipe(
     Effect.provide(TestConfigProvider),
-    Effect.provide(ApiConfig.Test)
+    Effect.provide(ApiConfig.testLayer)
   )
 )
 ```
@@ -285,7 +285,7 @@ const program = Effect.gen(function* () {
 3. **Redact secrets:** Use `Config.redacted()` for tokens, passwords, API keys
 4. **Group related config:** Use `Config.nested()` for prefixed environment variables
 5. **Type safety:** Let Effect infer types from your Config declarations
-6. **Layer composition:** Create config layers with `Layer.effect()` and static `Live` properties
+6. **Layer composition:** Create config layers with `Layer.effect()` and static `layer` properties
 
 ## Example: Database Config Layer
 
@@ -301,7 +301,7 @@ class DatabaseConfig extends Context.Tag("DatabaseConfig")<
     readonly password: Redacted.Redacted
   }
 >() {
-  static readonly Live = Layer.effect(
+  static readonly layer = Layer.effect(
     DatabaseConfig,
     Effect.gen(function* () {
       const host = yield* Config.string("DB_HOST")
