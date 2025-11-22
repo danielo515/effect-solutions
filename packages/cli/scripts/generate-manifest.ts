@@ -14,9 +14,7 @@ const docFiles = readdirSync(DOCS_DIR)
 // Generate import statements
 const imports = docFiles.map((filename, i) => {
   const varName = `DOC__${i.toString().padStart(2, "0")}`;
-  return `import ${varName} from "../../website/docs/${filename}" with {
-  type: "text",
-};`;
+  return `import ${varName} from "../../website/docs/${filename}" with { type: "text" };`;
 });
 
 // Generate RAW_DOCS array
@@ -25,7 +23,8 @@ const rawDocsEntries = docFiles.map((filename, i) => {
   return `  { filename: "${filename}", source: ${varName} },`;
 });
 
-const manifest = `import matter from "gray-matter";
+const manifest = `// @ts-nocheck
+import matter from "gray-matter";
 
 // Auto-generated manifest - DO NOT EDIT MANUALLY
 // Run: bun run generate:manifest

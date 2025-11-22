@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
+import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Copy } from "@phosphor-icons/react";
+import { type MouseEvent, useState } from "react";
 import { cn } from "@/lib/cn";
 import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
 import { useTonePlayer } from "@/lib/useTonePlayer";
@@ -38,8 +38,19 @@ export function LLMInstructionsButton({
         document.body.removeChild(textarea);
       }
       setCopied(true);
-      playTone({ frequency: 640, duration: 0.09, volume: 0.05, type: "triangle" });
-      playTone({ frequency: 860, duration: 0.08, delay: 0.08, volume: 0.045, type: "triangle" });
+      playTone({
+        frequency: 640,
+        duration: 0.09,
+        volume: 0.05,
+        type: "triangle",
+      });
+      playTone({
+        frequency: 860,
+        duration: 0.08,
+        delay: 0.08,
+        volume: 0.045,
+        type: "triangle",
+      });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy instructions", error);
@@ -69,9 +80,9 @@ export function LLMInstructionsButton({
           className="flex items-center gap-2 whitespace-nowrap"
         >
           {copied ? (
-            <Check size={16} weight="bold" />
+            <CheckIcon size={16} weight="bold" />
           ) : (
-            <Copy size={16} weight="bold" />
+            <CopyIcon size={16} weight="bold" />
           )}
           <span aria-live="polite">
             {copied ? "Copied to clipboard!" : "Copy Agent Instructions"}

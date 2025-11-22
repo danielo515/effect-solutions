@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 
-import { DOC_LOOKUP, DOCS } from "../../cli/src/docs-manifest";
-import { openIssue as openIssueService } from "../../cli/src/open-issue-service";
 import { McpSchema, McpServer, Tool, Toolkit } from "@effect/ai";
 import { BunRuntime, BunSink, BunStream } from "@effect/platform-bun";
 import { Effect, Layer, Schema } from "effect";
+import { DOC_LOOKUP, DOCS } from "../../cli/src/docs-manifest";
+import { openIssue as openIssueService } from "../../cli/src/open-issue-service";
 import pkg from "../package.json" with { type: "json" };
 
 const SERVER_NAME = "effect-solutions";
@@ -62,7 +62,8 @@ const DocsTemplate = McpServer.resource`effect-docs://docs/${docSlugParam}`({
 
 // Search tool implementation
 const SearchTool = Tool.make("search_effect_solutions", {
-  description: "Search Effect Solutions documentation by query string. Returns matching docs with relevance scoring.",
+  description:
+    "Search Effect Solutions documentation by query string. Returns matching docs with relevance scoring.",
   parameters: {
     query: Schema.String.annotations({
       description: "Search query to find relevant Effect documentation topics",
@@ -86,7 +87,7 @@ const SearchTool = Tool.make("search_effect_solutions", {
         score: Schema.Number.annotations({
           description: "Relevance score (higher is more relevant)",
         }),
-      })
+      }),
     ).annotations({
       description: "List of matching documentation topics, sorted by relevance",
     }),
@@ -95,16 +96,22 @@ const SearchTool = Tool.make("search_effect_solutions", {
 
 // Open GitHub issue tool
 const OpenIssueTool = Tool.make("open_issue", {
-  description: "Open a GitHub issue to request new documentation, ask questions not covered by current guides, or suggest topics. Returns a pre-filled issue URL.",
+  description:
+    "Open a GitHub issue to request new documentation, ask questions not covered by current guides, or suggest topics. Returns a pre-filled issue URL.",
   parameters: {
-    category: Schema.Literal("Topic Request", "Fix", "Improvement").annotations({
-      description: "Type of issue: 'Topic Request' for new docs, 'Fix' for errors/bugs, 'Improvement' for enhancements",
-    }),
+    category: Schema.Literal("Topic Request", "Fix", "Improvement").annotations(
+      {
+        description:
+          "Type of issue: 'Topic Request' for new docs, 'Fix' for errors/bugs, 'Improvement' for enhancements",
+      },
+    ),
     title: Schema.String.annotations({
-      description: "Brief title for the issue (e.g., 'How to handle errors in services')",
+      description:
+        "Brief title for the issue (e.g., 'How to handle errors in services')",
     }),
     description: Schema.String.annotations({
-      description: "Detailed description of the topic, question, or documentation request",
+      description:
+        "Detailed description of the topic, question, or documentation request",
     }),
   },
   success: Schema.Struct({
@@ -119,7 +126,8 @@ const OpenIssueTool = Tool.make("open_issue", {
 
 // Help/Getting Started tool
 const GetHelpTool = Tool.make("get_help", {
-  description: "Get comprehensive help on using Effect Solutions MCP server, reading documentation, and setting up Effect repositories. Returns usage guide, best practices, and quick start instructions.",
+  description:
+    "Get comprehensive help on using Effect Solutions MCP server, reading documentation, and setting up Effect repositories. Returns usage guide, best practices, and quick start instructions.",
   parameters: {},
   success: Schema.Struct({
     guide: Schema.String.annotations({
@@ -167,9 +175,10 @@ const searchDocs = ({ query }: { query: string }) =>
       if (queryIndex !== -1) {
         const start = Math.max(0, queryIndex - 50);
         const end = Math.min(doc.body.length, queryIndex + excerptLength);
-        excerpt = (start > 0 ? "..." : "") +
-                  doc.body.slice(start, end) +
-                  (end < doc.body.length ? "..." : "");
+        excerpt =
+          (start > 0 ? "..." : "") +
+          doc.body.slice(start, end) +
+          (end < doc.body.length ? "..." : "");
       }
 
       return {
@@ -186,7 +195,15 @@ const searchDocs = ({ query }: { query: string }) =>
     return { results };
   });
 
-const openIssue = ({ category, title, description }: { category: "Topic Request" | "Fix" | "Improvement"; title: string; description: string }) =>
+const openIssue = ({
+  category,
+  title,
+  description,
+}: {
+  category: "Topic Request" | "Fix" | "Improvement";
+  title: string;
+  description: string;
+}) =>
   Effect.sync(() =>
     openIssueService({
       category,
@@ -248,7 +265,9 @@ Complete index of all documentation topics with slugs, titles, and descriptions.
 Fetch specific documentation by slug (e.g., \`effect-docs://docs/error-handling\`).
 
 Available slugs include:
-${DOCS.slice(0, 10).map(d => `- ${d.slug}`).join('\n')}
+${DOCS.slice(0, 10)
+  .map((d) => `- ${d.slug}`)
+  .join("\n")}
 ...and ${DOCS.length - 10} more (see effect-docs://docs/topics for full list)
 
 ## Recommended Workflow

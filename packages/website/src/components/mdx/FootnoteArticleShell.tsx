@@ -26,7 +26,10 @@ export function FootnoteArticleShell({
   return (
     <div
       ref={setArticleRef}
-      className={cn("mx-auto flex w-full flex-1 flex-col max-w-screen-md", className)}
+      className={cn(
+        "mx-auto flex w-full flex-1 flex-col max-w-screen-md",
+        className,
+      )}
       {...props}
     >
       {children}

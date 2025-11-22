@@ -1,10 +1,13 @@
 "use client";
 
+import {
+  ArrowRightIcon,
+  ArrowSquareOutIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
-import { ArrowRight, ArrowSquareOut } from "@phosphor-icons/react/dist/ssr";
 import type { AnchorHTMLAttributes, MouseEventHandler, ReactNode } from "react";
-import { useLessonNavSfx } from "@/lib/useLessonNavSfx";
 import { cn } from "@/lib/cn";
+import { useLessonNavSfx } from "@/lib/useLessonNavSfx";
 
 interface MDXLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   href?: string;
@@ -12,14 +15,8 @@ interface MDXLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
 }
 
 export function MDXLink(props: MDXLinkProps) {
-  const {
-    children,
-    className,
-    href,
-    onMouseEnter,
-    onClick,
-    ...anchorProps
-  } = props;
+  const { children, className, href, onMouseEnter, onClick, ...anchorProps } =
+    props;
   const { playHoverTone, playTapTone } = useLessonNavSfx();
   const isInternal =
     (href?.startsWith("/") && !href.startsWith("//")) || href?.startsWith("./");
@@ -51,7 +48,7 @@ export function MDXLink(props: MDXLinkProps) {
         onClick={handleClick}
       >
         {children}
-        <ArrowRight size={16} weight="bold" className={iconClassName} />
+        <ArrowRightIcon size={16} weight="bold" className={iconClassName} />
       </Link>
     );
   }
@@ -67,7 +64,7 @@ export function MDXLink(props: MDXLinkProps) {
     >
       {children}
       {isExternal && (
-        <ArrowSquareOut size={16} weight="bold" className={iconClassName} />
+        <ArrowSquareOutIcon size={16} weight="bold" className={iconClassName} />
       )}
     </a>
   );

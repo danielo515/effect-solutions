@@ -1,14 +1,15 @@
 "use client";
 
-import { useRef } from "react";
-import { Skull } from "@phosphor-icons/react";
+import { SkullIcon } from "@phosphor-icons/react";
 import { motion, useInView } from "motion/react";
+import { useRef } from "react";
 import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
 
 export function EffectOrFooter() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: false, margin: "-100px" });
-  const { handleHover, handleClick, handleFocusVisible } = useLessonSfxHandlers();
+  const { handleHover, handleClick, handleFocusVisible } =
+    useLessonSfxHandlers();
 
   const navSfxProps = {
     onMouseEnter: handleHover,
@@ -62,7 +63,7 @@ export function EffectOrFooter() {
         className="hover:text-neutral-400 transition-colors cursor-default"
         {...navSfxProps}
       >
-        <Skull className="h-4 w-4" weight="fill" />
+        <SkullIcon className="h-4 w-4" weight="fill" />
       </a>
     </motion.div>
   );

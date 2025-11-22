@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DocList } from "@/components/DocList";
-import { getAllDocs } from "@/lib/mdx";
 import { SITE_DEPLOYMENT_URL } from "@/constants/urls";
+import { getAllDocs } from "@/lib/mdx";
 
 export const metadata: Metadata = {
   title: "Effect Solutions",

@@ -1,5 +1,5 @@
+import type { Heading, PhrasingContent, Root } from "mdast";
 import { visit } from "unist-util-visit";
-import type { Heading, Root } from "mdast";
 
 const slugify = (value: string) =>
   value
@@ -9,12 +9,16 @@ const slugify = (value: string) =>
     .replace(/\s+/g, "-")
     .replace(/--+/g, "-");
 
-const extractText = (node: any): string => {
+const extractText = (node: PhrasingContent | Heading): string => {
   if (!node) return "";
-  if (node.type === "text" && typeof node.value === "string") {
+  if (
+    node.type === "text" &&
+    "value" in node &&
+    typeof node.value === "string"
+  ) {
     return node.value;
   }
-  if (Array.isArray(node.children)) {
+  if ("children" in node && Array.isArray(node.children)) {
     return node.children.map(extractText).join(" ");
   }
   return "";
@@ -25,11 +29,13 @@ export function remarkHeadingIds() {
     visit(tree, "heading", (node: Heading) => {
       const text = extractText(node);
       const id = slugify(text);
-      const data =
-        (node.data ??= {}) as Heading["data"] & {
-          id?: string;
-          hProperties?: { id?: string; [key: string]: unknown };
-        };
+      if (!node.data) {
+        node.data = {};
+      }
+      const data = node.data as Heading["data"] & {
+        id?: string;
+        hProperties?: { id?: string; [key: string]: unknown };
+      };
       data.hProperties ??= {};
       if (!data.id) {
         data.id = id;

@@ -10,8 +10,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { KIT_TWITTER_URL } from "@/constants/urls";
-import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
 import { normalizeDocSlug } from "@/lib/normalizeDocSlug";
+import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
 
 interface DocFooterProps {
   docTitles: Record<string, string>;

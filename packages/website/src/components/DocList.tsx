@@ -56,14 +56,19 @@ export function DocList({ docs }: DocListProps) {
       {} as Record<DocGroup, typeof docs>,
     );
 
-    const flattened: Array<{ doc: DocListProps["docs"][number]; group: DocGroup }> = [];
+    const flattened: Array<{
+      doc: DocListProps["docs"][number];
+      group: DocGroup;
+    }> = [];
     const starts: number[] = [];
 
     GROUP_DISPLAY_ORDER.forEach((group) => {
       const groupDocs = grouped[group];
       if (!groupDocs?.length) return;
       starts.push(flattened.length);
-      groupDocs.forEach((doc) => flattened.push({ doc, group }));
+      for (const doc of groupDocs) {
+        flattened.push({ doc, group });
+      }
     });
 
     return {
@@ -98,6 +103,7 @@ export function DocList({ docs }: DocListProps) {
     const getGroupIndexForDoc = (docIndex: number) => {
       for (let i = 0; i < groupStartIndexes.length; i++) {
         const start = groupStartIndexes[i];
+        if (start === undefined) continue;
         const nextStart = groupStartIndexes[i + 1] ?? totalDocs;
         if (docIndex >= start && docIndex < nextStart) return i;
       }
@@ -144,7 +150,8 @@ export function DocList({ docs }: DocListProps) {
           if (prev === null) return 0;
           const currentGroupIndex = getGroupIndexForDoc(prev);
           const nextGroupStart = groupStartIndexes[currentGroupIndex + 1];
-          if (nextGroupStart === undefined) return groupStartIndexes[currentGroupIndex];
+          if (nextGroupStart === undefined)
+            return groupStartIndexes[currentGroupIndex] ?? null;
           return nextGroupStart;
         });
         return;
@@ -157,7 +164,7 @@ export function DocList({ docs }: DocListProps) {
           if (prev === null) return 0;
           const currentGroupIndex = getGroupIndexForDoc(prev);
           const prevGroupStart = groupStartIndexes[currentGroupIndex - 1];
-          if (prevGroupStart === undefined) return groupStartIndexes[0];
+          if (prevGroupStart === undefined) return groupStartIndexes[0] ?? null;
           return prevGroupStart;
         });
         return;
@@ -208,7 +215,6 @@ export function DocList({ docs }: DocListProps) {
     playClickSfx();
   }, [playClickSfx]);
 
-
   let runningIndex = -1;
 
   return (
@@ -228,7 +234,7 @@ export function DocList({ docs }: DocListProps) {
             </div>
             <div className="border-t border-neutral-800" />
 
-            {groupedDocs[group]!.map((doc, index, arr) => {
+            {groupedDocs[group]?.map((doc, index, arr) => {
               runningIndex += 1;
               const currentIndex = runningIndex;
 

@@ -1,9 +1,9 @@
+import { BriefcaseIcon, GlobeIcon } from "@phosphor-icons/react/dist/ssr";
 import type { CSSProperties, ReactNode } from "react";
 import { Suspense } from "react";
-import { BriefcaseIcon, Globe } from "@phosphor-icons/react/dist/ssr";
 import { KeyboardNavigator } from "@/components/og/KeyboardNavigator";
-import { getAllOgSpecs } from "@/lib/og-specs";
 import { commitMono } from "@/lib/fonts";
+import { getAllOgSpecs } from "@/lib/og-specs";
 
 const DEFAULTS = {
   tag: "EFFECT.SOLUTIONS",
@@ -65,7 +65,7 @@ export default async function OgTemplate({
               <Cell className="justify-end text-white/60">
                 <div className="flex items-center gap-3">
                   <span>AN EFFECT FIELD MANUAL</span>
-                  <Globe className="h-5 w-5" weight="regular" />
+                  <GlobeIcon className="h-5 w-5" weight="regular" />
                 </div>
               </Cell>
             </div>

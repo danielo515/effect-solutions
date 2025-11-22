@@ -6,7 +6,7 @@ const WATCH_DIR = path.join(process.cwd(), "docs");
 
 const clients = new Set<WebSocket>();
 
-const server = Bun.serve({
+const _server = Bun.serve({
   port: PORT,
   hostname: "127.0.0.1",
   fetch(req, server) {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, type MouseEvent } from "react";
+import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Copy } from "@phosphor-icons/react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { useLessonNavSfx } from "@/lib/useLessonNavSfx";
 import { useTonePlayer } from "@/lib/useTonePlayer";
@@ -86,8 +86,19 @@ export function CodeCopyButton({ value, className }: CodeCopyButtonProps) {
         document.body.removeChild(textarea);
       }
       setCopied(true);
-      playTone({ frequency: 640, duration: 0.09, volume: 0.05, type: "triangle" });
-      playTone({ frequency: 860, duration: 0.08, delay: 0.08, volume: 0.045, type: "triangle" });
+      playTone({
+        frequency: 640,
+        duration: 0.09,
+        volume: 0.05,
+        type: "triangle",
+      });
+      playTone({
+        frequency: 860,
+        duration: 0.08,
+        delay: 0.08,
+        volume: 0.045,
+        type: "triangle",
+      });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error("Failed to copy code", error);
@@ -129,9 +140,9 @@ export function CodeCopyButton({ value, className }: CodeCopyButtonProps) {
           className="flex items-center gap-1.5 whitespace-nowrap"
         >
           {copied ? (
-            <Check size={14} weight="bold" />
+            <CheckIcon size={14} weight="bold" />
           ) : (
-            <Copy size={14} weight="bold" />
+            <CopyIcon size={14} weight="bold" />
           )}
           <span aria-live="polite">{copied ? "COPIED" : "COPY"}</span>
         </motion.span>

@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
-import { FootnoteSidebar } from "@/components/FootnoteSidebar";
 import { DocTocSidebar } from "@/components/DocTocSidebar";
+import { FootnoteSidebar } from "@/components/FootnoteSidebar";
 import { FootnoteArticleShell } from "@/components/mdx/FootnoteArticleShell";
 import { dimensions } from "@/constants/dimensions";
 import { SITE_DEPLOYMENT_URL } from "@/constants/urls";
 import { FootnoteProvider } from "@/lib/footnote-context";
-import { remarkHeadingIds } from "@/lib/remark-heading-ids";
-import { getAllDocSlugs, getDocBySlug, normalizeDocSlug } from "@/lib/mdx";
 import { generateLLMInstructions } from "@/lib/llm-instructions";
+import { getAllDocSlugs, getDocBySlug, normalizeDocSlug } from "@/lib/mdx";
+import { remarkHeadingIds } from "@/lib/remark-heading-ids";
 import { useMDXComponents } from "@/mdx-components";
 
 interface DocPageProps {

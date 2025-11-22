@@ -1,6 +1,6 @@
 "use client";
 
-import { CursorClick } from "@phosphor-icons/react";
+import { CursorClickIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { useLessonNavSfx } from "@/lib/useLessonNavSfx";
@@ -28,7 +28,7 @@ export function CursorInstallButton() {
       onClick={playTapTone}
       aria-label="Add Effect Solutions MCP server to Cursor"
     >
-      <CursorClick
+      <CursorClickIcon
         size={16}
         weight="bold"
         className="text-neutral-400 shrink-0"

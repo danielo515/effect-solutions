@@ -33,7 +33,11 @@ const slugify = (value: string) =>
 const clamp = (value: number, min = 0, max = 100) =>
   Math.min(Math.max(value, min), max);
 
-export function DocTocSidebar({ className, style, title }: DocTocSidebarProps) {
+export function DocTocSidebar({
+  className,
+  style,
+  title: _title,
+}: DocTocSidebarProps) {
   const { article } = useFootnoteContext();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const footerRef = useRef<HTMLElement | null>(null);

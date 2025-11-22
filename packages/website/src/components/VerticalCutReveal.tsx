@@ -9,7 +9,6 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
-  type CSSProperties,
 } from "react";
 
 import { cn } from "@/lib/cn";

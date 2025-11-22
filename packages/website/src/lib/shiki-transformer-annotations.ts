@@ -12,6 +12,11 @@ interface Annotation {
   id: string;
 }
 
+interface TransformerContext {
+  annotations?: Annotation[];
+  codeLines?: string[];
+}
+
 function getClasses(annotation: Annotation): string[] {
   const { type, content } = annotation;
 
@@ -198,15 +203,17 @@ export function transformerAnnotations(): ShikiTransformer {
       });
 
       // Store annotations for later hooks
-      (this as any).annotations = adjustedAnnotations;
-      (this as any).codeLines = filteredLines;
+      const context = this as unknown as TransformerContext;
+      context.annotations = adjustedAnnotations;
+      context.codeLines = filteredLines;
 
       return filteredLines.join("\n");
     },
 
     line(node, line) {
-      const annotations: Annotation[] = (this as any).annotations || [];
-      const codeLines: string[] = (this as any).codeLines || [];
+      const context = this as unknown as TransformerContext;
+      const annotations: Annotation[] = context.annotations || [];
+      const codeLines: string[] = context.codeLines || [];
 
       const lineText = codeLines[line - 1] ?? "";
 
@@ -275,8 +282,9 @@ export function transformerAnnotations(): ShikiTransformer {
     },
 
     span(node, line, col) {
-      const annotations: Annotation[] = (this as any).annotations || [];
-      const codeLines: string[] = (this as any).codeLines || [];
+      const context = this as unknown as TransformerContext;
+      const annotations: Annotation[] = context.annotations || [];
+      const codeLines: string[] = context.codeLines || [];
 
       if (!codeLines[line - 1]) return;
 

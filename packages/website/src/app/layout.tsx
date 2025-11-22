@@ -1,6 +1,6 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Analytics } from "@vercel/analytics/next";
 import { SITE_URL } from "@/constants/urls";
 import { commitMono, geistMono } from "@/lib/fonts";
 import "./globals.css";

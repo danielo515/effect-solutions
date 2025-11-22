@@ -30,7 +30,7 @@ if (proc.exitCode !== 0) {
 // Find the newly created file
 const afterFiles = await readdir(changesetDir);
 const newFile = afterFiles.find(
-  (file: string) => !beforeFiles.has(file) && file.endsWith(".md")
+  (file: string) => !beforeFiles.has(file) && file.endsWith(".md"),
 );
 
 if (!newFile) {

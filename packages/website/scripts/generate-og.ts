@@ -3,9 +3,8 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-
-import { chromium } from "playwright";
 import type { Browser } from "playwright";
+import { chromium } from "playwright";
 
 import { getAllDocs } from "../src/lib/mdx";
 

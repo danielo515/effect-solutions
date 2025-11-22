@@ -3,7 +3,7 @@
 import {
   ArrowLeftIcon,
   BriefcaseIcon,
-  GithubLogo,
+  GithubLogoIcon,
   SpeakerSimpleHighIcon,
   SpeakerSimpleSlashIcon,
 } from "@phosphor-icons/react";
@@ -11,8 +11,8 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type FocusEvent, useCallback, useEffect, useState } from "react";
-import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
 import { normalizeDocSlug } from "@/lib/normalizeDocSlug";
+import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
 import { useSoundSettings } from "@/lib/useSoundSettings";
 import { useTonePlayer } from "@/lib/useTonePlayer";
 import { NavTitleCycler } from "./NavTitleCycler";
@@ -110,10 +110,29 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
   const playToggleSfx = useCallback(
     (nextMuted: boolean) => {
       if (nextMuted) {
-        playTone({ frequency: 320, duration: 0.12, volume: 0.05, type: "sine", force: true });
+        playTone({
+          frequency: 320,
+          duration: 0.12,
+          volume: 0.05,
+          type: "sine",
+          force: true,
+        });
       } else {
-        playTone({ frequency: 640, duration: 0.09, volume: 0.05, type: "triangle", force: true });
-        playTone({ frequency: 860, duration: 0.09, delay: 0.08, volume: 0.045, type: "triangle", force: true });
+        playTone({
+          frequency: 640,
+          duration: 0.09,
+          volume: 0.05,
+          type: "triangle",
+          force: true,
+        });
+        playTone({
+          frequency: 860,
+          duration: 0.09,
+          delay: 0.08,
+          volume: 0.045,
+          type: "triangle",
+          force: true,
+        });
       }
     },
     [playTone],
@@ -132,7 +151,9 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
       if (isToggleKey && !event.metaKey && !event.ctrlKey && !event.altKey) {
         const target = event.target as HTMLElement | null;
         const isTypingElement =
-          target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
+          target?.tagName === "INPUT" ||
+          target?.tagName === "TEXTAREA" ||
+          target?.isContentEditable;
         if (isTypingElement) return;
         event.preventDefault();
         handleToggleMute();
@@ -228,7 +249,7 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
           aria-label="View on GitHub"
           {...navSfxProps}
         >
-          <GithubLogo className="h-4 w-4" weight="regular" />
+          <GithubLogoIcon className="h-4 w-4" weight="regular" />
         </a>
         <button
           type="button"

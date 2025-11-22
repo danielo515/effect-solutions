@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
+import type { ReactNode } from "react";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CommandPalette } from "@/components/CommandPalette";
 import { DocFooter } from "@/components/DocFooter";
@@ -11,11 +11,7 @@ import {
 import { getDocTitles, getOrderedDocSlugs } from "@/lib/mdx";
 import { SoundSettingsProvider } from "@/lib/useSoundSettings";
 
-export default function SiteLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function SiteLayout({ children }: { children: ReactNode }) {
   const documents = serializeSearchDocuments(getDocSearchDocuments());
   const docTitles = getDocTitles();
   const orderedSlugs = getOrderedDocSlugs();

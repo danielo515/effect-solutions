@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { renderDocList, renderDocs } from "./cli";
+import { DOCS } from "./docs-manifest";
 import {
   getCollectLog,
   openIssue,
   resetCollectLog,
 } from "./open-issue-service";
-import { DOCS } from "./docs-manifest";
 
 describe("effect-solutions CLI docs", () => {
   test("list output includes all docs", () => {

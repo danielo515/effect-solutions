@@ -4,9 +4,9 @@
 // Falls back to an error message telling the user how to proceed.
 
 import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PLATFORM_ARCH = `${process.platform}-${process.arch}`;
 
@@ -22,7 +22,7 @@ const binaryName = TARGET_MAP[PLATFORM_ARCH];
 if (!binaryName) {
   console.error(
     `[effect-solutions] Unsupported platform: ${PLATFORM_ARCH}. ` +
-      "Please open an issue with your OS/CPU details."
+      "Please open an issue with your OS/CPU details.",
   );
   process.exit(1);
 }
@@ -33,7 +33,7 @@ const binPath = path.join(__dirname, "dist", binaryName);
 if (!fs.existsSync(binPath)) {
   console.error(
     `[effect-solutions] Prebuilt binary not found for ${PLATFORM_ARCH}. ` +
-      "Try reinstalling, or open an issue if the problem persists."
+      "Try reinstalling, or open an issue if the problem persists.",
   );
   process.exit(1);
 }
