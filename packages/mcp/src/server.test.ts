@@ -489,7 +489,7 @@ describe("MCP Server Integration", () => {
       expect(content?.mimeType).toBe("text/markdown");
       expect(content?.text).toBeDefined();
       expect(content?.text).toContain("Effect Solutions Documentation Index");
-      expect(content?.text).toContain("overview");
+      expect(content?.text).toContain("quick-start");
     } finally {
       await client.close();
     }
