@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "effect-solutions@*"
-      - "effect-solutions-mcp@*"
   workflow_dispatch:
 
 permissions:
@@ -27,6 +26,9 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
+
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
