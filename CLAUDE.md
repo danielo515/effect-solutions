@@ -72,8 +72,10 @@ Files are processed by Next.js and rendered with MDX support. The slug becomes t
 
 1. Create new file in `packages/website/docs/` with proper numbering
 2. Add frontmatter with title and description
-3. Run `bun --cwd packages/website run generate:og` to create social images
-4. Test locally with `bun run dev`
+3. **Create corresponding test file in `tests/`** - All code examples must have tests to ensure they're correct
+4. Run `bun --cwd packages/website run generate:og` to create social images
+5. Test locally with `bun run dev`
+6. Run `bun run test` to verify all examples work
 
 ### MDX Components
 
@@ -98,8 +100,20 @@ Built with Effect CLI and Effect Schema. Tests in `packages/cli/src/cli.test.ts`
 
 ## Testing
 
-- CLI tests: `bun test packages/cli/src/cli.test.ts`
+**Documentation Tests** (`/tests`):
+- Use vitest + @effect/vitest for testing doc examples
+- Each non-draft doc should have a corresponding test file
+- Ensures all code examples are real and work correctly
+- Run: `bunx vitest run tests/`
+
+**CLI Tests** (`packages/cli/`):
+- Use bun:test for standalone CLI package tests
+- Run: `cd packages/cli && bun test`
+
+**All Tests**:
+- Run: `bun run test` (runs doc tests with vitest)
 - Type checking: `bunx tsc --build --force`
+- Doc type checking: `bun run typecheck:docs`
 - Linting: `bunx biome check .`
 
 ## Deployment
