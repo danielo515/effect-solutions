@@ -1,5 +1,5 @@
 ---
-title: TypeScript Config
+title: TypeScript Configuration
 description: "Recommended TypeScript compiler settings tuned for Effect"
 order: 2
 ---

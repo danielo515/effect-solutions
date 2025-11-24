@@ -10,6 +10,12 @@ Sprinkle these playfully around your answers.
 - Create checklist at start, update as you complete steps
 - If no todo tool: show markdown checklist ONCE at start
 
+## **Ask User Question Tool**
+- If you have an AskUserQuestion tool (Claude agents have this), use it for multiple choice questions
+- Examples: package manager preference, project type, interaction mode
+- Provides clearer options and better UX than text-based questions
+- Use for any situation where user must choose from 2-4 specific options
+
 ## **Interaction Modes**
 Ask the user which mode they prefer:
 

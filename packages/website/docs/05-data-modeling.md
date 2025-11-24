@@ -93,9 +93,8 @@ const isOk = Match.type<Result>().pipe(
   Match.orElse(() => false)
 )
 
-// Usage - TaggedClass uses constructor, not .make()
-const success = new Success({ value: 42 })
-const failure = new Failure({ error: "oops" })
+const success = Success.make({ value: 42 })
+const failure = Failure.make({ error: "oops" })
 
 handleResult(success) // "Got: 42"
 handleResult(failure) // "Error: oops"
