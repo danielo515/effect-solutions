@@ -72,7 +72,7 @@ class Analytics extends Context.Tag("@app/Analytics")<
 class Users extends Context.Tag("@app/Users")<
   Users,
   {
-    readonly findById: (id: string) => Effect.Effect<User>
+    readonly findById: (id: string) => Effect.Effect<User, Error>
   }
 >() {
   static readonly layer = Layer.effect(
@@ -83,11 +83,15 @@ class Users extends Context.Tag("@app/Users")<
       const analytics = yield* Analytics
 
       // 2. define the service methods
-      const findById = Effect.fn("Users.findById")(function* (id: string) {
-        yield* analytics.track("user.find", { id })
-        const response = yield* http.get(`https://api.example.com/users/${id}`)
-        return yield* HttpClientResponse.schemaBodyJson(User)(response)
-      })
+      const findById = (id: string) =>
+        Effect.gen(function* () {
+          yield* analytics.track("user.find", { id })
+          const response = yield* http.get(`https://api.example.com/users/${id}`)
+          return yield* HttpClientResponse.schemaBodyJson(User)(response)
+        }).pipe(
+          Effect.mapError(() => new Error("Failed to fetch user")),
+          Effect.withSpan("Users.findById")
+        )
 
       // 3. return the service
       return Users.of({ findById })
@@ -155,14 +159,15 @@ class UserService extends Context.Tag("@app/UserService")<
       const cache = yield* Cache
       const logger = yield* Logger
 
-      const getUser = Effect.fn("UserService.getUser")(function* (id: string) {
-        yield* logger.log(`Fetching user ${id}`)
-        const cached = yield* cache.get(`user:${id}`)
-        if (cached) return JSON.parse(cached)
+      const getUser = (id: string) =>
+        Effect.gen(function* () {
+          yield* logger.log(`Fetching user ${id}`)
+          const cached = yield* cache.get(`user:${id}`)
+          if (cached) return JSON.parse(cached)
 
-        const result = yield* db.query(`SELECT * FROM users WHERE id = ?`)
-        return result[0]
-      })
+          const result = yield* db.query(`SELECT * FROM users WHERE id = ?`)
+          return result[0]
+        }).pipe(Effect.withSpan("UserService.getUser"))
 
       return UserService.of({ getUser })
     })
@@ -207,18 +212,18 @@ class Database extends Context.Tag("@app/Database")<
     })
   })
 
-  // Production using Effect.gen for async operations
-  static readonly layer = Layer.effect(
-    Database,
-    Effect.gen(function* () {
-      const pool = yield* createConnectionPool()
-
-      return Database.of({
-        query: (sql) => Effect.tryPromise(() => pool.query(sql)),
-        execute: (sql) => Effect.tryPromise(() => pool.execute(sql)),
-      })
-    })
-  )
+  // Production layer would connect to real database
+  // static readonly layer = Layer.effect(
+  //   Database,
+  //   Effect.gen(function* () {
+  //     const pool = yield* createConnectionPool()
+  //
+  //     return Database.of({
+  //       query: (sql) => Effect.tryPromise(() => pool.query(sql)),
+  //       execute: (sql) => Effect.tryPromise(() => pool.execute(sql)),
+  //     })
+  //   })
+  // )
 }
 
 class Cache extends Context.Tag("@app/Cache")<
@@ -238,18 +243,18 @@ class Cache extends Context.Tag("@app/Cache")<
     })
   })
 
-  // Production
-  static readonly layer = Layer.effect(
-    Cache,
-    Effect.gen(function* () {
-      const redis = yield* connectToRedis()
-
-      return Cache.of({
-        get: (key) => Effect.tryPromise(() => redis.get(key)),
-        set: (key, value) => Effect.tryPromise(() => redis.set(key, value)),
-      })
-    })
-  )
+  // Production layer would connect to Redis
+  // static readonly layer = Layer.effect(
+  //   Cache,
+  //   Effect.gen(function* () {
+  //     const redis = yield* connectToRedis()
+  //
+  //     return Cache.of({
+  //       get: (key) => Effect.tryPromise(() => redis.get(key)),
+  //       set: (key, value) => Effect.tryPromise(() => redis.set(key, value)),
+  //     })
+  //   })
+  // )
 }
 ```
 
@@ -312,15 +317,16 @@ export class ApiClient extends Context.Tag("@app/ApiClient")<
     Effect.gen(function* () {
       const config = yield* AppConfig
 
-      const fetch = Effect.fn("ApiClient.fetch")(function* (path: string) {
-        const url = `${config.apiUrl}${path}`
-        yield* Effect.log(
-          `Fetching ${url} (timeout: ${
-            config.timeout
-          }ms, token: ${Redacted.value(config.token)})`
-        )
-        return `Response from ${url}`
-      })
+      const fetch = (path: string) =>
+        Effect.gen(function* () {
+          const url = `${config.apiUrl}${path}`
+          yield* Effect.log(
+            `Fetching ${url} (timeout: ${
+              config.timeout
+            }ms, token: ${Redacted.value(config.token)})`
+          )
+          return `Response from ${url}`
+        }).pipe(Effect.withSpan("ApiClient.fetch"))
 
       return ApiClient.of({ fetch })
     })

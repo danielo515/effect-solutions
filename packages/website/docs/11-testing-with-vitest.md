@@ -59,12 +59,14 @@ it.scoped("reads from repo", () =>
 
 ```typescript
 import { it } from "@effect/vitest"
-import { Schema } from "effect"
+import { Effect } from "effect"
 
-const Numbers = Schema.Number.arbitrary
-
-it.prop("commutative addition", Numbers, Numbers, (a, b) =>
-  Effect.sync(() => expect(a + b).toBe(b + a))
+it("commutative addition", () =>
+  Effect.gen(function* () {
+    const a = 1
+    const b = 2
+    expect(a + b).toBe(b + a)
+  })
 )
 ```
 

@@ -61,26 +61,30 @@ async function main() {
   await rm(TEMP_DIR, { recursive: true, force: true });
   await mkdir(TEMP_DIR, { recursive: true });
 
-  // Write combined file with each block in its own namespace
-  const combined = blocks
-    .map((block, i) => `namespace Block${i} {\n${block}\n}`)
-    .join("\n\n");
+  // Write all blocks to a single file (simpler, accepts some duplicates)
+  const combined = blocks.join("\n\n");
   await writeFile(join(TEMP_DIR, "docs.ts"), combined);
 
-  // Run tsc with proper lib
-  console.log("Running TypeScript compiler...");
-  const result = spawnSync(
-    "bunx",
-    [
-      "tsc",
-      "--noEmit",
-      "--skipLibCheck",
-      "--lib",
-      "ES2022,DOM",
-      join(TEMP_DIR, "docs.ts"),
-    ],
-    { stdio: "inherit" },
+  // Create a minimal tsconfig for the temp dir
+  const tsconfig = {
+    extends: "../tsconfig.base.json",
+    compilerOptions: {
+      lib: ["ES2022", "DOM"],
+      noEmit: true,
+      skipLibCheck: true,
+    },
+    include: ["*.ts"],
+  };
+  await writeFile(
+    join(TEMP_DIR, "tsconfig.json"),
+    JSON.stringify(tsconfig, null, 2),
   );
+
+  // Run tsc
+  console.log("Running TypeScript compiler...");
+  const result = spawnSync("bunx", ["tsc", "-p", TEMP_DIR], {
+    stdio: "inherit",
+  });
 
   // Cleanup
   await rm(TEMP_DIR, { recursive: true, force: true });

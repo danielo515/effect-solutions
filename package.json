@@ -19,7 +19,8 @@
     "version": "changeset version && bun install",
     "release": "bun run generate:manifest && GITHUB_TOKEN=$(gh auth token) changeset version && changeset tag && git push --follow-tags",
     "test": "bun run generate:manifest && bun test",
-    "check": "biome check . --write && bunx tsc --build --force && bun run test"
+    "typecheck:docs": "bun scripts/typecheck-docs.ts",
+    "check": "biome check . --write && bunx tsc --build --force && bun run typecheck:docs && bun run test"
   },
   "dependencies": {
     "@effect/platform": "^0.93.3",
