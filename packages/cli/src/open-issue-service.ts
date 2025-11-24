@@ -5,9 +5,9 @@ export type OpenIssueCategory = "Topic Request" | "Fix" | "Improvement";
 export type BrowserOpenStrategy = "system" | "stub" | "collect" | "noop";
 
 export type OpenIssueInput = {
-  category: OpenIssueCategory;
-  title: string;
-  description: string;
+  category?: OpenIssueCategory;
+  title?: string;
+  description?: string;
   strategy?: BrowserOpenStrategy;
 };
 
@@ -74,13 +74,37 @@ export const openIssue = ({
   strategy,
 }: OpenIssueInput): OpenIssueResult => {
   const repoUrl = "https://github.com/kitlangton/effect-solutions";
-  const fullTitle = `[${category}] ${title}`;
-  const body = `## Description\n\n${description}\n\n---\n*Created via [Effect Solutions CLI](${repoUrl})*`;
 
-  const issueUrl = `${repoUrl}/issues/new?${new URLSearchParams({
-    title: fullTitle,
-    body,
-  }).toString()}`;
+  // If no args provided, just open to the new issue page
+  if (!category && !title && !description) {
+    const issueUrl = `${repoUrl}/issues/new`;
+    const resolvedStrategy =
+      strategy ||
+      (process.env.EFFECT_SOLUTIONS_OPEN_STRATEGY as BrowserOpenStrategy) ||
+      "system";
+
+    const openResult = openInBrowser(issueUrl, resolvedStrategy);
+
+    return {
+      issueUrl,
+      opened: openResult.opened,
+      openedWith: openResult.openedWith,
+      message: openResult.opened
+        ? `Opened GitHub new issue page in browser (${openResult.openedWith}): ${issueUrl}`
+        : `Generated GitHub new issue page URL (browser not opened: ${openResult.openedWith}): ${issueUrl}`,
+    };
+  }
+
+  const fullTitle = category && title ? `[${category}] ${title}` : title || "";
+  const body = description
+    ? `## Description\n\n${description}\n\n---\n*Created via [Effect Solutions CLI](${repoUrl})*`
+    : `---\n*Created via [Effect Solutions CLI](${repoUrl})*`;
+
+  const params = new URLSearchParams();
+  if (fullTitle) params.set("title", fullTitle);
+  if (body) params.set("body", body);
+
+  const issueUrl = `${repoUrl}/issues/new?${params.toString()}`;
 
   const resolvedStrategy =
     strategy ||
