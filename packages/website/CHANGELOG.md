@@ -1,5 +1,21 @@
 # @effect-best-practices/website
 
+## 0.4.4
+
+### Patch Changes
+
+- [`3c9d019`](https://github.com/kitlangton/effect-solutions/commit/3c9d019d6c329ce656d39a05da929ce7328c89f1) Thanks [@kitlangton](https://github.com/kitlangton)! - Add comprehensive test coverage for documentation examples
+
+  Created test files for all non-draft documentation to validate code examples are correct and working. All 61 tests passing with vitest and @effect/vitest.
+
+- [`3c9d019`](https://github.com/kitlangton/effect-solutions/commit/3c9d019d6c329ce656d39a05da929ce7328c89f1) Thanks [@kitlangton](https://github.com/kitlangton)! - Add Testing with Vitest documentation (draft)
+
+  Comprehensive guide for testing Effect code with @effect/vitest based on patterns from the official Effect repository. Covers setup, assertion styles, test variants, and common patterns.
+
+- [`3c9d019`](https://github.com/kitlangton/effect-solutions/commit/3c9d019d6c329ce656d39a05da929ce7328c89f1) Thanks [@kitlangton](https://github.com/kitlangton)! - Upgrade @effect/vitest to 0.27.0 for utils export support
+
+  Upgrade from 0.1.0 to 0.27.0 to support importing assertion utilities from @effect/vitest/utils. Update test infrastructure to use vitest instead of bun test for documentation examples.
+
 ## 0.4.3
 
 ### Patch Changes

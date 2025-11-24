@@ -1,5 +1,13 @@
 # effect-solutions
 
+## 0.3.6
+
+### Patch Changes
+
+- [`3c9d019`](https://github.com/kitlangton/effect-solutions/commit/3c9d019d6c329ce656d39a05da929ce7328c89f1) Thanks [@kitlangton](https://github.com/kitlangton)! - Add Testing with Vitest documentation (draft)
+
+  Comprehensive guide for testing Effect code with @effect/vitest based on patterns from the official Effect repository. Covers setup, assertion styles, test variants, and common patterns.
+
 ## 0.3.5
 
 ### Patch Changes
