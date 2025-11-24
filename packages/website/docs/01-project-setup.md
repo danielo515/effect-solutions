@@ -7,8 +7,8 @@ order: 1
 # Project Setup
 
 This guide covers:
-1. Effect Language Service: Editor diagnostics and build-time type checking
-2. LLM Context Directory: Local reference repositories for AI assistance
+1. **Effect Language Service**: Editor diagnostics and build-time type checking
+2. **Reference Repositories**: Local reference repositories for AI assistance
 
 For a well-configured Effect project, install the Effect Language Service and set up local context for AI-assisted development.
 

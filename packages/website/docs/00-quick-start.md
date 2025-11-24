@@ -8,7 +8,7 @@ order: 0
 
 This is a field manual for Effect. It is neither exhaustive nor encyclopedic (see the [official docs](https://effect.website) for that). Instead, you will find a set of patterns and "best practices" for writing idiomatic Effect code.
 
-We **highly recommended** that you install the `effect-solutions` CLI, such that your agents can quickly access this guide.
+We **highly recommend** that you follow the agent-guided setup below.
 
 ## Agent-Guided Setup
 
