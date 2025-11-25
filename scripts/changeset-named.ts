@@ -13,8 +13,7 @@ const PACKAGES = {
 type PackageKey = keyof typeof PACKAGES;
 type BumpType = "patch" | "minor" | "major";
 
-const isPackageKey = (value: string): value is PackageKey =>
-  value in PACKAGES;
+const isPackageKey = (value: string): value is PackageKey => value in PACKAGES;
 
 const isBumpType = (value: string): value is BumpType =>
   ["patch", "minor", "major"].includes(value);
@@ -38,10 +37,14 @@ const changeset = Command.make("changeset", {
   Command.withHandler(({ description, package: pkg, bump }) =>
     Effect.gen(function* () {
       if (!isPackageKey(pkg)) {
-        return yield* Effect.fail(new Error(`Invalid package: ${pkg}. Use: website or cli`));
+        return yield* Effect.fail(
+          new Error(`Invalid package: ${pkg}. Use: website or cli`),
+        );
       }
       if (!isBumpType(bump)) {
-        return yield* Effect.fail(new Error(`Invalid bump: ${bump}. Use: patch, minor, or major`));
+        return yield* Effect.fail(
+          new Error(`Invalid bump: ${bump}. Use: patch, minor, or major`),
+        );
       }
 
       const fs = yield* FileSystem.FileSystem;
@@ -68,8 +71,4 @@ const run = Command.run(changeset, {
   version: "0.0.0",
 });
 
-pipe(
-  run(process.argv),
-  Effect.provide(BunContext.layer),
-  BunRuntime.runMain,
-);
+pipe(run(process.argv), Effect.provide(BunContext.layer), BunRuntime.runMain);

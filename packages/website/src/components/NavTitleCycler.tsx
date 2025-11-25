@@ -12,15 +12,15 @@ interface NavTitleCyclerProps {
 const TITLE_VARIANTS = {
   initial: {
     y: -24,
-    opacity: 0.8
+    opacity: 0.8,
   },
   animate: {
     y: 0,
-    opacity: 1
+    opacity: 1,
   },
   exit: {
     y: 24,
-    opacity: 0.8
+    opacity: 0.8,
   },
 } as const;
 
@@ -58,7 +58,7 @@ export function NavTitleCycler({ title, className }: NavTitleCyclerProps) {
             transition={{
               type: "spring",
               visualDuration: 0.5,
-              bounce: 0.3
+              bounce: 0.3,
             }}
             className="block leading-tight will-change-transform whitespace-nowrap col-start-1 row-start-1"
           >

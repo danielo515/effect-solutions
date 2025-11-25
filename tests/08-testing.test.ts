@@ -128,11 +128,12 @@ class Users extends Context.Tag("@app/Users")<
   static readonly testLayer = Layer.sync(Users, () => {
     const store = new Map<UserId, User>();
 
-    const create = (user: User) => Effect.sync(() => void store.set(user.id, user));
+    const create = (user: User) =>
+      Effect.sync(() => void store.set(user.id, user));
 
     const findById = (id: UserId) =>
       Effect.fromNullable(store.get(id)).pipe(
-        Effect.orElseFail(() => UserNotFound.make({ id }))
+        Effect.orElseFail(() => UserNotFound.make({ id })),
       );
 
     return Users.of({ create, findById });
@@ -142,7 +143,9 @@ class Users extends Context.Tag("@app/Users")<
 // Tickets service with test layer
 class Tickets extends Context.Tag("@app/Tickets")<
   Tickets,
-  { readonly issue: (eventId: EventId, userId: UserId) => Effect.Effect<Ticket> }
+  {
+    readonly issue: (eventId: EventId, userId: UserId) => Effect.Effect<Ticket>;
+  }
 >() {
   static readonly testLayer = Layer.sync(Tickets, () => {
     let counter = 0;
@@ -182,7 +185,12 @@ class Emails extends Context.Tag("@app/Emails")<
 // Events service orchestrates leaf services
 class Events extends Context.Tag("@app/Events")<
   Events,
-  { readonly register: (eventId: EventId, userId: UserId) => Effect.Effect<Registration, UserNotFound> }
+  {
+    readonly register: (
+      eventId: EventId,
+      userId: UserId,
+    ) => Effect.Effect<Registration, UserNotFound>;
+  }
 >() {
   static readonly layer = Layer.effect(
     Events,
@@ -191,7 +199,10 @@ class Events extends Context.Tag("@app/Events")<
       const tickets = yield* Tickets;
       const emails = yield* Emails;
 
-      const register = Effect.fn("Events.register")(function* (eventId: EventId, userId: UserId) {
+      const register = Effect.fn("Events.register")(function* (
+        eventId: EventId,
+        userId: UserId,
+      ) {
         const user = yield* users.findById(userId);
         const ticket = yield* tickets.issue(eventId, userId);
         const now = yield* Clock.currentTimeMillis;
@@ -209,7 +220,7 @@ class Events extends Context.Tag("@app/Events")<
             to: user.email,
             subject: "Event Registration Confirmed",
             body: `Your ticket code: ${ticket.code}`,
-          })
+          }),
         );
 
         return registration;
