@@ -1,5 +1,11 @@
 # @effect-best-practices/website
 
+## 0.4.8
+
+### Patch Changes
+
+- [`021de1a`](https://github.com/kitlangton/effect-solutions/commit/021de1a3b3716af81bc357fbde629b2fad36fada) Thanks [@kitlangton](https://github.com/kitlangton)! - Fix header link height and title animation
+
 ## 0.4.7
 
 ### Patch Changes
