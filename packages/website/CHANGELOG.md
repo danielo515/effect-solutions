@@ -1,5 +1,11 @@
 # @effect-best-practices/website
 
+## 0.4.9
+
+### Patch Changes
+
+- [`ee78386`](https://github.com/kitlangton/effect-solutions/commit/ee7838681c37c92e75a7ca9feeea7e020b088cf8) Thanks [@kitlangton](https://github.com/kitlangton)! - Publish testing doc
+
 ## 0.4.8
 
 ### Patch Changes
