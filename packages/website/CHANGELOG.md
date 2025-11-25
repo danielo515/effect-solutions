@@ -1,5 +1,11 @@
 # @effect-best-practices/website
 
+## 0.4.11
+
+### Patch Changes
+
+- [`09c18d9`](https://github.com/kitlangton/effect-solutions/commit/09c18d99ab0efdcce99c2e1dd306996c07fa1a4d) Thanks [@kitlangton](https://github.com/kitlangton)! - restructure data modeling docs
+
 ## 0.4.10
 
 ### Patch Changes
