@@ -11,11 +11,9 @@ import {
   TypeId as PathTypeId,
 } from "@effect/platform/Path";
 import {
-  Terminal as TerminalTag,
   type Terminal,
+  Terminal as TerminalTag,
 } from "@effect/platform/Terminal";
-import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Array as Arr,
   Cause,
@@ -28,6 +26,8 @@ import {
   Ref,
   Schema,
 } from "effect";
+import { AnimatePresence, motion } from "motion/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // =============================================================================
 // Task Schema & Domain
@@ -66,6 +66,7 @@ class TaskList extends Schema.Class<TaskList>("TaskList")({
     const index = this.tasks.findIndex((t) => t.id === id);
     if (index === -1) return [this, Option.none()];
 
+    // biome-ignore lint/style/noNonNullAssertion: index check above
     const updated = this.tasks[index]!.toggle();
     const tasks = Arr.modify(this.tasks, index, () => updated);
     return [new TaskList({ tasks }), Option.some(updated)];
@@ -95,7 +96,11 @@ const INITIALIZED_KEY = "effect-solutions-tasks-initialized";
 
 const DEFAULT_TASKS = new TaskList({
   tasks: [
-    new Task({ id: TaskId.make(1), text: "Run the agent-guided setup", done: false }),
+    new Task({
+      id: TaskId.make(1),
+      text: "Run the agent-guided setup",
+      done: false,
+    }),
     new Task({ id: TaskId.make(2), text: "Become effect-pilled", done: false }),
   ],
 });
@@ -213,40 +218,37 @@ const MockTerminal = Layer.succeed(TerminalTag, {
 const notSupported = (name: string) => () =>
   Effect.die(`FileSystem.${name} not supported in browser`);
 
-const MockFileSystem = Layer.succeed(
-  FileSystem,
-  {
-    access: notSupported("access"),
-    copy: notSupported("copy"),
-    copyFile: notSupported("copyFile"),
-    chmod: notSupported("chmod"),
-    chown: notSupported("chown"),
-    exists: notSupported("exists"),
-    link: notSupported("link"),
-    makeDirectory: notSupported("makeDirectory"),
-    makeTempDirectory: notSupported("makeTempDirectory"),
-    makeTempDirectoryScoped: notSupported("makeTempDirectoryScoped"),
-    makeTempFile: notSupported("makeTempFile"),
-    makeTempFileScoped: notSupported("makeTempFileScoped"),
-    open: notSupported("open"),
-    readDirectory: notSupported("readDirectory"),
-    readFile: notSupported("readFile"),
-    readFileString: notSupported("readFileString"),
-    readLink: notSupported("readLink"),
-    realPath: notSupported("realPath"),
-    remove: notSupported("remove"),
-    rename: notSupported("rename"),
-    sink: notSupported("sink"),
-    stat: notSupported("stat"),
-    stream: notSupported("stream"),
-    symlink: notSupported("symlink"),
-    truncate: notSupported("truncate"),
-    utimes: notSupported("utimes"),
-    watch: notSupported("watch"),
-    writeFile: notSupported("writeFile"),
-    writeFileString: notSupported("writeFileString"),
-  } as FileSystemType,
-);
+const MockFileSystem = Layer.succeed(FileSystem, {
+  access: notSupported("access"),
+  copy: notSupported("copy"),
+  copyFile: notSupported("copyFile"),
+  chmod: notSupported("chmod"),
+  chown: notSupported("chown"),
+  exists: notSupported("exists"),
+  link: notSupported("link"),
+  makeDirectory: notSupported("makeDirectory"),
+  makeTempDirectory: notSupported("makeTempDirectory"),
+  makeTempDirectoryScoped: notSupported("makeTempDirectoryScoped"),
+  makeTempFile: notSupported("makeTempFile"),
+  makeTempFileScoped: notSupported("makeTempFileScoped"),
+  open: notSupported("open"),
+  readDirectory: notSupported("readDirectory"),
+  readFile: notSupported("readFile"),
+  readFileString: notSupported("readFileString"),
+  readLink: notSupported("readLink"),
+  realPath: notSupported("realPath"),
+  remove: notSupported("remove"),
+  rename: notSupported("rename"),
+  sink: notSupported("sink"),
+  stat: notSupported("stat"),
+  stream: notSupported("stream"),
+  symlink: notSupported("symlink"),
+  truncate: notSupported("truncate"),
+  utimes: notSupported("utimes"),
+  watch: notSupported("watch"),
+  writeFile: notSupported("writeFile"),
+  writeFileString: notSupported("writeFileString"),
+} as FileSystemType);
 
 // Stub Path - CLI framework requires it but we don't use path operations
 const MockPath = Layer.succeed(Path, {
@@ -271,7 +273,7 @@ const MockPath = Layer.succeed(Path, {
     ext: "",
     name: path.split("/").pop() ?? "",
   }),
-  relative: (from: string, to: string) => to,
+  relative: (_from: string, to: string) => to,
   resolve: (...paths: ReadonlyArray<string>) => paths.join("/"),
   toFileUrl: () => Effect.die("Path.toFileUrl not supported in browser"),
   toNamespacedPath: (path: string) => path,
@@ -333,7 +335,9 @@ const toggleCommand = Command.make("toggle", { id: idArg }, ({ id }) =>
     yield* Option.match(result, {
       onNone: () => Console.log(`Task #${id} not found`),
       onSome: (task) =>
-        Console.log(`Toggled: ${task.text} (${task.done ? "done" : "pending"})`),
+        Console.log(
+          `Toggled: ${task.text} (${task.done ? "done" : "pending"})`,
+        ),
     });
   }),
 ).pipe(Command.withDescription("Toggle a task's done status"));
@@ -350,7 +354,12 @@ const clearCommand = Command.make("clear", {}, () =>
 // Root command with subcommands
 const app = Command.make("tasks", {}).pipe(
   Command.withDescription("A simple task manager"),
-  Command.withSubcommands([addCommand, listCommand, toggleCommand, clearCommand]),
+  Command.withSubcommands([
+    addCommand,
+    listCommand,
+    toggleCommand,
+    clearCommand,
+  ]),
 );
 
 const cli = Command.run(app, {
@@ -466,12 +475,14 @@ const ANSI_COLORS: Record<number, string> = {
 
 function parseAnsi(text: string): AnsiSpan[] {
   const spans: AnsiSpan[] = [];
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape codes
   const regex = /\x1b\[([0-9;]*)m/g;
 
   let lastIndex = 0;
   let currentStyle: Omit<AnsiSpan, "text"> = {};
   let match: RegExpExecArray | null;
 
+  // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec pattern
   while ((match = regex.exec(text)) !== null) {
     // Add text before this escape sequence
     if (match.index > lastIndex) {
@@ -535,8 +546,12 @@ function AnsiText({ text }: { text: string }) {
         if (span.color) style.color = span.color;
 
         return Object.keys(style).length > 0 ? (
-          <span key={i} style={style}>{span.text}</span>
+          // biome-ignore lint/suspicious/noArrayIndexKey: static list
+          <span key={i} style={style}>
+            {span.text}
+          </span>
         ) : (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static list
           <span key={i}>{span.text}</span>
         );
       })}
@@ -624,6 +639,7 @@ export function TerminalDemo() {
   const [hintIndex, setHintIndex] = useState(0);
   const [blinkKey, setBlinkKey] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const outputRef = useRef<HTMLDivElement>(null);
 
@@ -670,6 +686,8 @@ export function TerminalDemo() {
       setInput("");
       setCursorPos(0);
       setIsRunning(false);
+      // Refocus after React re-renders with disabled=false
+      setTimeout(() => inputRef.current?.focus(), 0);
     },
     [input, isRunning],
   );
@@ -808,7 +826,8 @@ export function TerminalDemo() {
         const newIndex = historyIndex + 1;
         if (newIndex < commandHistory.length) {
           setHistoryIndex(newIndex);
-          const cmd = commandHistory[commandHistory.length - 1 - newIndex] ?? "";
+          const cmd =
+            commandHistory[commandHistory.length - 1 - newIndex] ?? "";
           setInput(cmd);
           setCursorPos(cmd.length);
           setTimeout(() => inp.setSelectionRange(cmd.length, cmd.length), 0);
@@ -821,7 +840,8 @@ export function TerminalDemo() {
         const newIndex = historyIndex - 1;
         if (newIndex >= 0) {
           setHistoryIndex(newIndex);
-          const cmd = commandHistory[commandHistory.length - 1 - newIndex] ?? "";
+          const cmd =
+            commandHistory[commandHistory.length - 1 - newIndex] ?? "";
           setInput(cmd);
           setCursorPos(cmd.length);
           setTimeout(() => inp.setSelectionRange(cmd.length, cmd.length), 0);
@@ -856,10 +876,13 @@ export function TerminalDemo() {
     setBlinkKey((k) => k + 1);
   }, [syncCursor]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll on history change
   useEffect(() => {
-    if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
-    }
+    requestAnimationFrame(() => {
+      if (outputRef.current) {
+        outputRef.current.scrollTop = outputRef.current.scrollHeight;
+      }
+    });
   }, [history]);
 
   const handleContainerClick = useCallback(() => {
@@ -879,8 +902,9 @@ export function TerminalDemo() {
   return (
     <>
       <style>{`@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }`}</style>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: focus delegation */}
       <div
-        className="not-prose my-6 border border-neutral-800 bg-neutral-950 font-mono text-sm"
+        className="not-prose my-6 border-y border-neutral-800 bg-neutral-950 font-mono text-sm"
         onClick={handleContainerClick}
         onKeyDown={undefined}
       >
@@ -897,6 +921,7 @@ export function TerminalDemo() {
 
         <div ref={outputRef} className="h-72 overflow-y-auto">
           {history.map((entry, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: append-only list
             <div key={i}>
               {i > 0 && <div className="border-t border-neutral-800/50" />}
               <div className="px-4 py-3">
@@ -922,11 +947,13 @@ export function TerminalDemo() {
               {input ? (
                 <span className="relative">
                   <span className="text-green-500">{nbsp(beforeCursor)}</span>
-                  <span
-                    key={blinkKey}
-                    className="absolute top-0 bottom-0 w-0.5 bg-green-500"
-                    style={blinkStyle}
-                  />
+                  {isFocused && (
+                    <span
+                      key={blinkKey}
+                      className="absolute top-0 bottom-0 w-0.5 bg-green-500"
+                      style={blinkStyle}
+                    />
+                  )}
                   <span className="text-green-500">{nbsp(afterCursor)}</span>
                   {cursorAtEnd && (
                     <span className="text-neutral-600">{autocomplete}</span>
@@ -934,11 +961,13 @@ export function TerminalDemo() {
                 </span>
               ) : (
                 <span className="relative">
-                  <span
-                    key={blinkKey}
-                    className="absolute top-0 bottom-0 left-0 w-0.5 bg-green-500"
-                    style={blinkStyle}
-                  />
+                  {isFocused && (
+                    <span
+                      key={blinkKey}
+                      className="absolute top-0 bottom-0 left-0 w-0.5 bg-green-500"
+                      style={blinkStyle}
+                    />
+                  )}
                   <AnimatePresence mode="popLayout">
                     <motion.span
                       key={hintIndex}
@@ -962,6 +991,8 @@ export function TerminalDemo() {
               onKeyDown={handleKeyDown}
               onClick={handleInputClick}
               onSelect={syncCursor}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               className="absolute inset-0 opacity-0 w-full cursor-text"
               autoComplete="off"
               spellCheck={false}

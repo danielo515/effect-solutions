@@ -75,6 +75,7 @@ describe("11-testing-with-vitest", () => {
 
 // Worked Example: Testing a Service
 const RegistrationId = Schema.String.pipe(Schema.brand("RegistrationId"));
+// biome-ignore lint/correctness/noUnusedVariables: branded type companion
 type RegistrationId = typeof RegistrationId.Type;
 
 const EventId = Schema.String.pipe(Schema.brand("EventId"));
@@ -84,6 +85,7 @@ const UserId = Schema.String.pipe(Schema.brand("UserId"));
 type UserId = typeof UserId.Type;
 
 const TicketId = Schema.String.pipe(Schema.brand("TicketId"));
+// biome-ignore lint/correctness/noUnusedVariables: branded type companion
 type TicketId = typeof TicketId.Type;
 
 class User extends Schema.Class<User>("User")({

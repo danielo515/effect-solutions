@@ -2,6 +2,7 @@ import { Args, Command, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { NodeContext } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
+// biome-ignore lint/suspicious/noShadowRestrictedNames: Effect convention
 import { Array, Context, Effect, Layer, Option, Schema } from "effect";
 
 // ============================================================================

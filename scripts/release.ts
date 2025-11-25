@@ -3,6 +3,7 @@
 import { Command } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { BunContext, BunRuntime } from "@effect/platform-bun";
+// biome-ignore lint/suspicious/noShadowRestrictedNames: Effect convention
 import { Array, Effect, pipe, String } from "effect";
 
 const exec = (cmd: string) => Effect.promise(() => Bun.$`sh -c ${cmd}`.text());

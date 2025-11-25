@@ -143,6 +143,7 @@ describe("03-basics", () => {
       Effect.gen(function* () {
         let logged = false;
         const program = Effect.succeed(42).pipe(
+          // biome-ignore lint/suspicious/noAssignInExpressions: test side effect
           Effect.tap(() => Effect.sync(() => (logged = true))),
         );
         const result = yield* program;
