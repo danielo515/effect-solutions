@@ -22,7 +22,7 @@ describe("05-data-modeling", () => {
       }
 
       // Usage
-      const user = new User({
+      const user = User.make({
         id: UserId.make("user-123"),
         name: "Alice",
         email: "alice@example.com",
@@ -87,8 +87,8 @@ describe("05-data-modeling", () => {
         Match.orElse(() => false),
       );
 
-      const success = new Success({ value: 42 });
-      const failure = new Failure({ error: "oops" });
+      const success = Success.make({ value: 42 });
+      const failure = Failure.make({ error: "oops" });
 
       strictEqual(handleResult(success), "Got: 42");
       strictEqual(handleResult(failure), "Error: oops");

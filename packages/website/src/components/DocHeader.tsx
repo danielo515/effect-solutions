@@ -181,7 +181,7 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
     isHovered && !isDocsListPage ? `arrow-${hoverAnimationId}` : "book";
 
   return (
-    <header className="relative h-16 lg:sticky lg:top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur bottom-0 border-b border-neutral-800">
+    <header className="relative h-16 sm:sticky sm:top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur bottom-0 border-b border-neutral-800">
       {/* <div
         className="absolute bottom-0 border-b border-neutral-800"
         style={{

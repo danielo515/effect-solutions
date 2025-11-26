@@ -21,11 +21,11 @@ bun add @effect/platform
 import { HttpClient, HttpClientRequest, HttpClientResponse, FetchHttpClient } from "@effect/platform"
 import { Effect, Schema } from "effect"
 
-const User = Schema.Struct({
+class User extends Schema.Class<User>("User")({
   id: Schema.Number,
   name: Schema.String,
   email: Schema.String,
-})
+}) {}
 
 const request = HttpClientRequest.get("https://api.example.com/users/42").pipe(
   HttpClientRequest.acceptJson
@@ -51,11 +51,11 @@ await fetchUser.pipe(Effect.provide(FetchHttpClient.layer), Effect.runPromise)
 import { HttpClient, HttpClientResponse, FetchHttpClient } from "@effect/platform"
 import { Effect, Layer, Schema } from "effect"
 
-const User = Schema.Struct({
+class User extends Schema.Class<User>("User")({
   id: Schema.Number,
   name: Schema.String,
   email: Schema.String,
-})
+}) {}
 
 const httpLayer = FetchHttpClient.layer
 

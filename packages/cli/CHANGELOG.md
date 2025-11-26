@@ -1,5 +1,21 @@
 # effect-solutions
 
+## 0.4.17
+
+## 0.4.16
+
+## 0.4.15
+
+## 0.4.14
+
+## 0.4.13
+
+## 0.4.12
+
+### Patch Changes
+
+- [`fa64161`](https://github.com/kitlangton/effect-solutions/commit/fa6416134acc8f4f0c7018f6b971c26bd332e083) Thanks [@kitlangton](https://github.com/kitlangton)! - Add @effect/cli documentation with Task Manager example
+
 ## 0.4.11
 
 ## 0.4.10

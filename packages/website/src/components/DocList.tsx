@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@/lib/cn";
+import type { DocGroup } from "@/lib/mdx";
 import { useLessonSfxHandlers } from "@/lib/useLessonNavSfx";
 import { EffectOrFooter } from "./EffectOrFooter";
 
@@ -19,21 +20,24 @@ interface DocListProps {
     title: string;
     description?: string;
     draft?: boolean;
+    group: DocGroup;
   }>;
 }
 
-type DocGroup = "Setup" | "Core Patterns" | "Drafts";
+type DisplayGroup = DocGroup | "Drafts";
 
-const GROUP_DISPLAY_ORDER: DocGroup[] = ["Setup", "Core Patterns", "Drafts"];
-
-const SETUP_SLUGS = new Set(["quick-start", "project-setup", "tsconfig"]);
+const GROUP_DISPLAY_ORDER: DisplayGroup[] = [
+  "Setup",
+  "Core Patterns",
+  "Ecosystem",
+  "Drafts",
+];
 
 const SCROLL_MARGIN_PX = 80; // accounts for sticky header/footer (h-16 = 64px) with a little buffer
 
-function assignGroup(doc: { slug: string; draft?: boolean }): DocGroup {
+function assignGroup(doc: { draft?: boolean; group: DocGroup }): DisplayGroup {
   if (doc.draft) return "Drafts";
-  if (SETUP_SLUGS.has(doc.slug)) return "Setup";
-  return "Core Patterns";
+  return doc.group;
 }
 
 export function DocList({ docs }: DocListProps) {
@@ -47,18 +51,18 @@ export function DocList({ docs }: DocListProps) {
   const linkRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
   const { groupedDocs, groupStartIndexes, totalDocs } = useMemo(() => {
-    const grouped = docs.reduce<Record<DocGroup, typeof docs>>(
+    const grouped = docs.reduce<Record<DisplayGroup, typeof docs>>(
       (acc, doc) => {
         const group = assignGroup(doc);
         acc[group] = acc[group] ? [...acc[group], doc] : [doc];
         return acc;
       },
-      {} as Record<DocGroup, typeof docs>,
+      {} as Record<DisplayGroup, typeof docs>,
     );
 
     const flattened: Array<{
       doc: DocListProps["docs"][number];
-      group: DocGroup;
+      group: DisplayGroup;
     }> = [];
     const starts: number[] = [];
 

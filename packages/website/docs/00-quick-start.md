@@ -2,6 +2,7 @@
 title: Quick Start
 description: "How to get started with Effect Solutions"
 order: 0
+group: Setup
 ---
 
 # Quick Start

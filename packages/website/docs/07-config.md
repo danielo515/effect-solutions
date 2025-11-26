@@ -58,10 +58,10 @@ const testConfigProvider = ConfigProvider.fromMap(
 )
 
 // Apply the provider
-const TestConfigLayer = Layer.setConfigProvider(testConfigProvider)
+const testConfigLayer = Layer.setConfigProvider(testConfigProvider)
 
 // Run with test config
-Effect.runPromise(program.pipe(Effect.provide(TestConfigLayer)))
+Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
 ```
 
 ## Recommended Pattern: Config Layers
@@ -167,7 +167,10 @@ const program = Effect.gen(function* () {
 import { Config, Effect, Schema } from "effect"
 
 // Define schemas with built-in validation
-const Port = Schema.Int.pipe(Schema.between(1, 65535))
+const Port = Schema.NumberFromString.pipe(
+  Schema.int(),
+  Schema.between(1, 65535)
+)
 const Environment = Schema.Literal("development", "staging", "production")
 
 const program = Effect.gen(function* () {
@@ -191,7 +194,8 @@ const program = Effect.gen(function* () {
 ```typescript
 import { Effect, Schema } from "effect"
 
-const Port = Schema.Int.pipe(
+const Port = Schema.NumberFromString.pipe(
+  Schema.int(),
   Schema.between(1, 65535),
   Schema.brand("Port")
 )
@@ -229,9 +233,11 @@ const program = Effect.gen(function* () {
 Override where config is loaded from using `Layer.setConfigProvider`:
 
 ```typescript
-import { ConfigProvider, Layer } from "effect"
+import { ConfigProvider, Effect, Layer } from "effect"
 
-const TestConfigLayer = Layer.setConfigProvider(
+const program = Effect.unit
+
+const testConfigLayer = Layer.setConfigProvider(
   ConfigProvider.fromMap(
     new Map([
       ["API_KEY", "test-key"],
@@ -240,21 +246,21 @@ const TestConfigLayer = Layer.setConfigProvider(
   )
 )
 
-const JsonConfigLayer = Layer.setConfigProvider(
+const jsonConfigLayer = Layer.setConfigProvider(
   ConfigProvider.fromJson({
     API_KEY: "prod-key",
     PORT: 8080,
   })
 )
 
-const PrefixedConfigLayer = Layer.setConfigProvider(
+const prefixedConfigLayer = Layer.setConfigProvider(
   ConfigProvider.fromEnv().pipe(
     ConfigProvider.nested("APP") // Reads APP_API_KEY, APP_PORT, etc.
   )
 )
 
 // Usage: provide whichever layer matches the environment
-Effect.runPromise(program.pipe(Effect.provide(TestConfigLayer)))
+Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
 ```
 
 ## Usage in Tests
@@ -357,7 +363,10 @@ const program = Effect.gen(function* () {
 ```typescript
 import { Context, Effect, Layer, Redacted, Schema } from "effect"
 
-const Port = Schema.Int.pipe(Schema.between(1, 65535))
+const Port = Schema.NumberFromString.pipe(
+  Schema.int(),
+  Schema.between(1, 65535)
+)
 
 class DatabaseConfig extends Context.Tag("@app/DatabaseConfig")<
   DatabaseConfig,

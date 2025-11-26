@@ -101,16 +101,17 @@ class Users extends Context.Tag("@app/Users")<
       const analytics = yield* Analytics
 
       // 2. define the service methods with Effect.fn for call-site tracing
-      const findById = Effect.fn("Users.findById")(function* (id: UserId) {
-        yield* analytics.track("user.find", { id })
-        const response = yield* http.get(`https://api.example.com/users/${id}`)
-        return yield* HttpClientResponse.schemaBodyJson(User)(response)
-      }).pipe(
+      const findById = Effect.fn("Users.findById")(
+        function* (id: UserId) {
+          yield* analytics.track("user.find", { id })
+          const response = yield* http.get(`https://api.example.com/users/${id}`)
+          return yield* HttpClientResponse.schemaBodyJson(User)(response)
+        },
         Effect.catchTag("ResponseError", (error) =>
           error.response.status === 404
             ? UserNotFoundError.make({ id })
-            : GenericUsersError.make({ id, error })
-        )
+            : GenericUsersError.make({ id, error }),
+        ),
       )
 
       // Use Effect.fn even for nullary methods (thunks) to enable tracing
@@ -213,7 +214,7 @@ class Events extends Context.Tag("@app/Events")<
           const now = yield* Clock.currentTimeMillis
 
           const registration = Registration.make({
-            id: RegistrationId.make(Schema.randomUUID()),
+            id: RegistrationId.make(crypto.randomUUID()),
             eventId,
             userId,
             ticketId: ticket.id,
@@ -244,6 +245,51 @@ Benefits:
 - Higher-level orchestration (Events) coordinates multiple services cleanly.
 - Type-checks immediately even though leaf services aren't implemented yet.
 - Adding production implementations later doesn't change Events code.
+
+## Sharing Layers in Tests with `it.layer`
+
+`it.layer` constructs a layer once for the entire suite and tears it down after all tests complete. This is useful for expensive resources like database connections; you pay the setup cost once rather than per-test.
+
+Since all tests share the same instance, be mindful that state can leak between tests.
+
+```typescript
+import { expect, it } from "@effect/vitest"
+import { Context, Effect, Layer } from "effect"
+
+class Counter extends Context.Tag("@app/Counter")<
+  Counter,
+  {
+    readonly get: () => Effect.Effect<number>
+    readonly increment: () => Effect.Effect<void>
+  }
+>() {
+  static readonly Live = Layer.sync(Counter, () => {
+    let count = 0
+    return {
+      get: () => Effect.succeed(count),
+      increment: () => Effect.sync(() => void count++),
+    }
+  })
+}
+
+it.layer(Counter.Live)("counter", (it) => {
+  it.effect("starts at zero", () =>
+    Effect.gen(function* () {
+      const counter = yield* Counter
+      expect(yield* counter.get()).toBe(0)
+    })
+  )
+
+  it.effect("increments", () =>
+    Effect.gen(function* () {
+      const counter = yield* Counter
+      yield* counter.increment()
+      // State persists: the first test already ran, so count was 0, now it's 1
+      expect(yield* counter.get()).toBe(1)
+    })
+  )
+})
+```
 
 See [Testing with Vitest](/testing-with-vitest#worked-example-testing-a-service) for a complete worked example testing this `Events` service with test layers.
 

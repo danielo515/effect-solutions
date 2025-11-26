@@ -2,6 +2,7 @@
 title: Project Setup
 description: "Install the Effect Language Service and strict project defaults"
 order: 1
+group: Setup
 ---
 
 # Project Setup

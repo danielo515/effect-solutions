@@ -92,15 +92,14 @@ export type Result = typeof Result.Type
 const success = Success.make({ value: 42 })
 const failure = Failure.make({ error: "oops" })
 
-Match.valueTags(success, {
-  Success: ({ value }) => `Got: ${value}`,
-  Failure: ({ error }) => `Error: ${error}`
-}) // "Got: 42"
+const renderResult = (result: Result) =>
+  Match.valueTags(result, {
+    Success: ({ value }) => `Got: ${value}`,
+    Failure: ({ error }) => `Error: ${error}`,
+  })
 
-Match.valueTags(failure, {
-  Success: ({ value }) => `Got: ${value}`,
-  Failure: ({ error }) => `Error: ${error}`
-}) // "Error: oops"
+renderResult(success) // "Got: 42"
+renderResult(failure) // "Error: oops"
 ```
 
 **Benefits:**

@@ -1,6 +1,6 @@
 import { describe, it } from "@effect/vitest";
 import { deepStrictEqual, strictEqual } from "@effect/vitest/utils";
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Schema } from "effect";
 
 describe("04-services-and-layers", () => {
   describe("Service Definition", () => {
@@ -260,6 +260,38 @@ describe("04-services-and-layers", () => {
         strictEqual(result.user.id, "123");
         strictEqual(result.user.name, "User 123");
         strictEqual(result.allUsers.length, 2);
+      }),
+    );
+
+    it.effect("supports Effect.fn transformers (e.g., catchTag)", () =>
+      Effect.gen(function* () {
+        class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
+          id: Schema.String,
+        }) {}
+
+        class Repo extends Context.Tag("@app/Repo")<
+          Repo,
+          { readonly findById: (id: string) => Effect.Effect<string> }
+        >() {
+          static readonly layer = Layer.succeed(Repo, {
+            findById: Effect.fn("Repo.findById")(
+              function* (id: string) {
+                yield* Effect.fail(NotFound.make({ id }));
+              },
+              Effect.catchTag("NotFound", (error) =>
+                Effect.succeed(`missing:${error.id}`),
+              ),
+            ),
+          });
+        }
+
+        const program = Effect.gen(function* () {
+          const repo = yield* Repo;
+          return yield* repo.findById("123");
+        });
+
+        const result = yield* program.pipe(Effect.provide(Repo.layer));
+        strictEqual(result, "missing:123");
       }),
     );
   });
@@ -775,5 +807,41 @@ describe("04-services-and-layers", () => {
         strictEqual(result.idB, 2);
       }),
     );
+  });
+
+  describe("it.layer", () => {
+    class Counter extends Context.Tag("@app/Counter")<
+      Counter,
+      {
+        readonly get: () => Effect.Effect<number>;
+        readonly increment: () => Effect.Effect<void>;
+      }
+    >() {
+      static readonly Live = Layer.sync(Counter, () => {
+        let count = 0;
+        return {
+          get: () => Effect.succeed(count),
+          increment: () => Effect.sync(() => void count++),
+        };
+      });
+    }
+
+    it.layer(Counter.Live)("counter", (it) => {
+      it.effect("starts at zero", () =>
+        Effect.gen(function* () {
+          const counter = yield* Counter;
+          strictEqual(yield* counter.get(), 0);
+        }),
+      );
+
+      it.effect("increments", () =>
+        Effect.gen(function* () {
+          const counter = yield* Counter;
+          yield* counter.increment();
+          // State persists: the first test already ran, so count was 0, now it's 1
+          strictEqual(yield* counter.get(), 1);
+        }),
+      );
+    });
   });
 });

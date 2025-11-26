@@ -28,7 +28,7 @@ export function DocFooter({ docTitles, orderedSlugs }: DocFooterProps) {
 
   if (!isDocPage) {
     return (
-      <footer className="relative no-prose h-16 lg:sticky lg:bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur border-t border-neutral-800">
+      <footer className="relative no-prose h-16 sm:sticky sm:bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur border-t border-neutral-800">
         <div className="max-w-screen-md mx-auto flex items-center justify-end w-full px-6 border-x border-neutral-800 h-full">
           <Link
             href={KIT_TWITTER_URL}
@@ -73,7 +73,7 @@ export function DocFooter({ docTitles, orderedSlugs }: DocFooterProps) {
   const nextTitle = nextSlug ? docTitles[nextSlug] : null;
 
   return (
-    <footer className="relative no-prose h-16 lg:sticky lg:bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur">
+    <footer className="relative no-prose h-16 sm:sticky sm:bottom-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur">
       <div
         className="absolute top-0 border-t border-neutral-800"
         style={{

@@ -80,6 +80,10 @@ describe("Calculator", () => {
 For tests that return Effect values (most common):
 
 ```typescript
+import { Effect } from "effect"
+
+const processData = (input: string) => Effect.succeed("expected")
+
 it.effect("processes data", () =>
   Effect.gen(function* () {
     const result = yield* processData("input")
@@ -226,7 +230,7 @@ it.effect.fails("known bug", () =>
 By default, `it.effect` suppresses log output. To enable logging:
 
 ```typescript
-import { Logger } from "effect"
+import { Effect, Logger } from "effect"
 
 // Option 1: Provide a logger
 it.effect("with logging", () =>

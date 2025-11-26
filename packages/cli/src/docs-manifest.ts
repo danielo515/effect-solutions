@@ -17,6 +17,7 @@ import DOC__09 from "../../website/docs/09-project-structure.md" with { type: "t
 import DOC__10 from "../../website/docs/10-incremental-adoption.md" with { type: "text" };
 import DOC__11 from "../../website/docs/11-http-clients.md" with { type: "text" };
 import DOC__12 from "../../website/docs/12-observability.md" with { type: "text" };
+import DOC__13 from "../../website/docs/13-cli.md" with { type: "text" };
 
 type DocMeta = {
   readonly slug: string;
@@ -45,6 +46,7 @@ const RAW_DOCS: ReadonlyArray<RawDoc> = [
   { filename: "10-incremental-adoption.md", source: DOC__10 },
   { filename: "11-http-clients.md", source: DOC__11 },
   { filename: "12-observability.md", source: DOC__12 },
+  { filename: "13-cli.md", source: DOC__13 },
 ];
 
 const filenameToSlug = (filename: string): string => {

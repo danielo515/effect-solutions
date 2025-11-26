@@ -1,5 +1,43 @@
 # @effect-best-practices/website
 
+## 0.4.17
+
+### Patch Changes
+
+- [`f1a32bf`](https://github.com/kitlangton/effect-solutions/commit/f1a32bfb4ed33e49e85e5dbc951e3c4bc91ba5d9) Thanks [@kitlangton](https://github.com/kitlangton)! - improve it.layer docs
+
+## 0.4.16
+
+### Patch Changes
+
+- [`b8d8b07`](https://github.com/kitlangton/effect-solutions/commit/b8d8b077a37da74bf5c8517217711dc7584b2a90) Thanks [@kitlangton](https://github.com/kitlangton)! - fix terminal error rendering and add colors
+
+- [`fa52619`](https://github.com/kitlangton/effect-solutions/commit/fa52619e932f2d103b0fb3fd2752d0269a141ef4) Thanks [@kitlangton](https://github.com/kitlangton)! - Refactor TerminalDemo component into a subfolder with extracted domain, services, and commands.
+
+## 0.4.15
+
+### Patch Changes
+
+- [`72dd8fe`](https://github.com/kitlangton/effect-solutions/commit/72dd8feab06c0a2d6ab4722e3609b2ea89bddabc) Thanks [@kitlangton](https://github.com/kitlangton)! - reset-button-sfx
+
+## 0.4.14
+
+### Patch Changes
+
+- [`e382f93`](https://github.com/kitlangton/effect-solutions/commit/e382f938fec1e5b41007afdfb357dad92f46be41) Thanks [@kitlangton](https://github.com/kitlangton)! - terminal-demo-focus-scroll
+
+## 0.4.13
+
+### Patch Changes
+
+- [`a1c06ba`](https://github.com/kitlangton/effect-solutions/commit/a1c06ba27f3d07267136df35ae9cabd2fdef9570) Thanks [@kitlangton](https://github.com/kitlangton)! - Add interactive terminal demo for CLI docs. Simulates task manager CLI in browser with localStorage persistence.
+
+## 0.4.12
+
+### Patch Changes
+
+- [`fa64161`](https://github.com/kitlangton/effect-solutions/commit/fa6416134acc8f4f0c7018f6b971c26bd332e083) Thanks [@kitlangton](https://github.com/kitlangton)! - Add @effect/cli documentation with Task Manager example
+
 ## 0.4.11
 
 ### Patch Changes

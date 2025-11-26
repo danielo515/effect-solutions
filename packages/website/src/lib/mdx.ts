@@ -5,11 +5,27 @@ import { normalizeDocSlug } from "./normalizeDocSlug";
 
 const docsDirectory = path.join(process.cwd(), "docs");
 
+export type DocGroup = "Setup" | "Core Patterns" | "Ecosystem";
+
+const VALID_GROUPS: Set<string> = new Set([
+  "Setup",
+  "Core Patterns",
+  "Ecosystem",
+]);
+
+function parseGroup(group: unknown): DocGroup {
+  if (typeof group === "string" && VALID_GROUPS.has(group)) {
+    return group as DocGroup;
+  }
+  return "Core Patterns";
+}
+
 export interface DocMetadata {
   title: string;
   description?: string;
   order?: number;
   draft?: boolean;
+  group: DocGroup;
 }
 
 export interface Doc extends DocMetadata {
@@ -92,6 +108,7 @@ function parseDocEntry(entry: DocFileEntry): Doc | null {
       description: data.description,
       order: data.order,
       draft: data.draft,
+      group: parseGroup(data.group),
       content: processedContent,
     } satisfies Doc;
   } catch {

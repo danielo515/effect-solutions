@@ -15,6 +15,10 @@ Effect best practices and patterns for humans and AI agents — https://www.effe
 - **Website**: https://www.effect.solutions
 - **CLI**: `bunx effect-solutions@latest list`
 
+## Local Reference Repos
+
+- Effect core monorepo (source for `@effect/*`, including `@effect/vitest` / `it.layer`): `/Users/kit/code/effectful/repos/effect`
+
 ## Development
 
 ```bash
@@ -56,7 +60,11 @@ Bun workspace with `workspaces: ["packages/*"]`. Effect Language Service configu
 
 ## Design Notes
 
-UI components use hard edges — no border radius (use `rounded-none` or omit rounding).
+UI components use hard edges; no border radius (use `rounded-none` or omit rounding).
+
+## Writing Style
+
+- Avoid em dashes (—). Use semicolons, commas, or separate sentences instead.
 
 ## Documentation Structure
 
@@ -71,11 +79,36 @@ Files are processed by Next.js and rendered with MDX support. The slug becomes t
 ### Adding New Docs
 
 1. Create new file in `packages/website/docs/` with proper numbering
-2. Add frontmatter with title and description
+2. Add frontmatter with title, description, and optionally group
 3. **Create corresponding test file in `tests/`** - All code examples must have tests to ensure they're correct
 4. Run `bun --cwd packages/website run generate:og` to create social images
 5. Test locally with `bun run dev`
 6. Run `bun run test` to verify all examples work
+
+### Frontmatter Groups
+
+Docs are organized into groups on the homepage via the `group` frontmatter field:
+
+- **Setup**: Getting started guides (`group: Setup`)
+- **Core Patterns**: Default if unspecified (`group: Core Patterns`)
+- **Ecosystem**: @effect packages like cli, platform, rpc (`group: Ecosystem`)
+- **Drafts**: Shown in dev only when `draft: true` (overrides group)
+
+Valid values: `Setup`, `Core Patterns`, `Ecosystem`
+
+```yaml
+---
+title: Command-Line Interfaces
+description: "Build CLIs with @effect/cli"
+order: 13
+group: Ecosystem
+---
+```
+
+### Doc Typechecking Tips
+
+- `bun run typecheck:docs` extracts every ```ts/```typescript code block and compiles it as an isolated module. Keep snippets self-contained.
+- Use `// hide-start` / `// hide-end` inside code fences to include helper stubs (types, imports, small services) that are needed for typechecking but should not render in the docs. This keeps examples focused while staying type-safe.
 
 ### MDX Components
 

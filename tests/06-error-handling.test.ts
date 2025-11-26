@@ -18,7 +18,7 @@ describe("06-error-handling", () => {
         },
       ) {}
 
-      const error = new ValidationError({
+      const error = ValidationError.make({
         field: "email",
         message: "Invalid format",
       });
@@ -48,11 +48,11 @@ describe("06-error-handling", () => {
       const AppError = Schema.Union(ValidationError, NotFoundError);
       type AppError = typeof AppError.Type;
 
-      const error1: AppError = new ValidationError({
+      const error1: AppError = ValidationError.make({
         field: "email",
         message: "Invalid",
       });
-      const error2: AppError = new NotFoundError({
+      const error2: AppError = NotFoundError.make({
         resource: "User",
         id: "123",
       });
@@ -71,7 +71,7 @@ describe("06-error-handling", () => {
         }) {}
 
         const program: Effect.Effect<string, HttpError> = Effect.fail(
-          new HttpError({
+          HttpError.make({
             statusCode: 500,
             message: "Server error",
           }),
@@ -107,10 +107,12 @@ describe("06-error-handling", () => {
         ): Effect.Effect<string, HttpError | ValidationError> => {
           if (useHttp) {
             return Effect.fail(
-              new HttpError({ statusCode: 404, message: "Not found" }),
+              HttpError.make({ statusCode: 404, message: "Not found" }),
             );
           }
-          return Effect.fail(new ValidationError({ message: "Invalid input" }));
+          return Effect.fail(
+            ValidationError.make({ message: "Invalid input" }),
+          );
         };
 
         const recovered = (useHttp: boolean) =>
@@ -144,7 +146,7 @@ describe("06-error-handling", () => {
 
         const program: Effect.Effect<string, HttpError | ValidationError> =
           Effect.fail(
-            new HttpError({
+            HttpError.make({
               statusCode: 500,
               message: "Internal server error",
             }),
@@ -176,7 +178,7 @@ describe("06-error-handling", () => {
         ) {}
 
         const program: Effect.Effect<string, HttpError | ValidationError> =
-          Effect.fail(new ValidationError({ message: "Bad input" }));
+          Effect.fail(ValidationError.make({ message: "Bad input" }));
 
         const recovered = program.pipe(
           Effect.catchTag("HttpError", () =>
@@ -186,7 +188,7 @@ describe("06-error-handling", () => {
         );
 
         const result = yield* recovered;
-        assertLeft(result, new ValidationError({ message: "Bad input" }));
+        assertLeft(result, ValidationError.make({ message: "Bad input" }));
       }),
     );
   });
@@ -211,10 +213,10 @@ describe("06-error-handling", () => {
         ): Effect.Effect<string, HttpError | ValidationError> => {
           if (errorType === "http") {
             return Effect.fail(
-              new HttpError({ statusCode: 500, message: "Server error" }),
+              HttpError.make({ statusCode: 500, message: "Server error" }),
             );
           }
-          return Effect.fail(new ValidationError({ message: "Invalid" }));
+          return Effect.fail(ValidationError.make({ message: "Invalid" }));
         };
 
         const recovered = (errorType: "http" | "validation") =>
@@ -246,7 +248,7 @@ describe("06-error-handling", () => {
 
         const makeError = (message: string) =>
           Effect.fail(
-            new ApiError({
+            ApiError.make({
               endpoint: "/api/users/123",
               statusCode: 500,
               error: new Error(message),
@@ -277,9 +279,9 @@ describe("06-error-handling", () => {
         },
       ) {}
 
-      const error1 = new WrappedError({ value: "string error" });
-      const error2 = new WrappedError({ value: { code: 42 } });
-      const error3 = new WrappedError({ value: new Error("real error") });
+      const error1 = WrappedError.make({ value: "string error" });
+      const error2 = WrappedError.make({ value: { code: 42 } });
+      const error3 = WrappedError.make({ value: new Error("real error") });
 
       strictEqual(error1._tag, "WrappedError");
       strictEqual(error2._tag, "WrappedError");
@@ -295,7 +297,7 @@ describe("06-error-handling", () => {
         }) {}
 
         const failingStep = Effect.fail(
-          new AppError({ message: "Step failed" }),
+          AppError.make({ message: "Step failed" }),
         );
 
         const program = Effect.gen(function* () {
@@ -307,7 +309,7 @@ describe("06-error-handling", () => {
 
         const result = yield* program.pipe(Effect.either);
 
-        assertLeft(result, new AppError({ message: "Step failed" }));
+        assertLeft(result, AppError.make({ message: "Step failed" }));
       }),
     );
 
@@ -328,12 +330,12 @@ describe("06-error-handling", () => {
           },
         ) {}
 
-        const program = Effect.fail(new OriginalError({ code: 404 }));
+        const program = Effect.fail(OriginalError.make({ code: 404 }));
 
         const transformed = program.pipe(
           Effect.catchTag("OriginalError", (error) =>
             Effect.fail(
-              new TransformedError({
+              TransformedError.make({
                 originalCode: error.code,
                 message: `Error code: ${error.code}`,
               }),
@@ -345,7 +347,7 @@ describe("06-error-handling", () => {
 
         assertLeft(
           result,
-          new TransformedError({
+          TransformedError.make({
             originalCode: 404,
             message: "Error code: 404",
           }),

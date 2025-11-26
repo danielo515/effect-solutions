@@ -48,3 +48,6 @@ bun.lockb
 
 # scratchpad
 .scratchpad/
+
+# docs typecheck temp files
+.docs-typecheck/

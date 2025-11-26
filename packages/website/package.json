@@ -1,6 +1,6 @@
 {
   "name": "@effect-best-practices/website",
-  "version": "0.4.11",
+  "version": "0.4.17",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -14,6 +14,9 @@
     "generate:og": "bun ./scripts/generate-og.ts"
   },
   "dependencies": {
+    "@effect/cli": "^0.72.1",
+    "@effect/platform": "^0.93.3",
+    "@effect/platform-browser": "^0.73.0",
     "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/typography": "^0.5.19",
     "@vercel/analytics": "^1.5.0",

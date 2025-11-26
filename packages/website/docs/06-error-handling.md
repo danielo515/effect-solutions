@@ -49,18 +49,24 @@ const error = ValidationError.make({
 - Custom methods via class
 - Sensible default `message` when you don't declare one
 
-**Note:** `Schema.TaggedError` creates yieldable errors that can be used directly without `Effect.fail()`:
+**Note:** `Schema.TaggedError` values are *yieldable*; you can return them directly in a generator without wrapping them in `Effect.fail`:
 
 ```typescript
-// ✅ Good: Yieldable errors can be used directly
-return error.response.status === 404
-  ? UserNotFoundError.make({ id })
-  : Effect.die(error)
+import { Effect, Random, Schema } from "effect"
 
-// ❌ Redundant: no need to wrap with Effect.fail
-return error.response.status === 404
-  ? Effect.fail(UserNotFoundError.make({ id }))
-  : Effect.die(error)
+class BadLuck extends Schema.TaggedError<BadLuck>()(
+  "BadLuck",
+  { roll: Schema.Number }
+) {}
+
+const rollDie = Effect.gen(function* () {
+  const roll = yield* Random.nextIntBetween(1, 6)
+  if (roll === 1) {
+    // Yield the tagged error directly; no Effect.fail needed
+    yield* BadLuck.make({ roll })
+  }
+  return { roll }
+})
 ```
 
 ## Recovering from Errors

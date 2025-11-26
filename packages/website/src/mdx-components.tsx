@@ -1,4 +1,4 @@
-import { AsteriskIcon } from "@phosphor-icons/react/dist/ssr";
+import { AsteriskIcon, PencilIcon } from "@phosphor-icons/react/dist/ssr";
 import type { MDXComponents } from "mdx/types";
 import {
   Children,
@@ -15,6 +15,7 @@ import { FootnoteReference } from "@/components/mdx/FootnoteReference";
 import { LLMInstructionsButton } from "@/components/mdx/LLMInstructionsButton";
 import { MarginAside } from "@/components/mdx/MarginAside";
 import { MDXLink } from "@/components/mdx/MDXLink";
+import { TerminalDemo } from "@/components/mdx/Terminal";
 import { cn } from "@/lib/cn";
 import { transformerAnnotations } from "@/lib/shiki-transformer-annotations";
 
@@ -125,6 +126,25 @@ export function useMDXComponents(
     h2: ({ children, className, id, ...props }) => {
       const headingId = headingIdFromChildren(id, children);
 
+      // Extract text to check for "Worked Example:" prefix
+      const text = Children.toArray(children)
+        .map((child) => {
+          if (typeof child === "string") return child;
+          if (isValidElement<{ children?: ReactNode }>(child)) {
+            const c = child.props.children;
+            if (typeof c === "string") return c;
+          }
+          return "";
+        })
+        .join("")
+        .trim();
+
+      const WORKED_EXAMPLE_PREFIX = "Worked Example:";
+      const isWorkedExample = text.startsWith(WORKED_EXAMPLE_PREFIX);
+      const displayTitle = isWorkedExample
+        ? text.slice(WORKED_EXAMPLE_PREFIX.length).trim()
+        : null;
+
       return (
         <h2
           id={headingId}
@@ -146,14 +166,26 @@ export function useMDXComponents(
             href={headingId ? `#${headingId}` : undefined}
             aria-label={headingId ? `Link to section ${headingId}` : undefined}
           >
-            <AsteriskIcon
-              size={18}
-              weight="bold"
-              className="text-neutral-500 shrink-0"
-            />
-            <span className="underline-offset-4 decoration-neutral-700">
-              {children}
-            </span>
+            {isWorkedExample ? (
+              <div className="flex flex-col gap-1">
+                <span className="flex items-center gap-2 text-sm text-neutral-500 uppercase tracking-wider">
+                  <PencilIcon size={16} weight="fill" />
+                  Example
+                </span>
+                <span>{displayTitle}</span>
+              </div>
+            ) : (
+              <>
+                <AsteriskIcon
+                  size={18}
+                  weight="bold"
+                  className="text-neutral-500 shrink-0"
+                />
+                <span className="underline-offset-4 decoration-neutral-700">
+                  {children}
+                </span>
+              </>
+            )}
           </a>
         </h2>
       );
@@ -212,6 +244,7 @@ export function useMDXComponents(
     MarginAside,
     DraftNote,
     DocTopicsList,
+    TerminalDemo,
     LLMInstructionsButton: instructions
       ? () => <LLMInstructionsButton instructions={instructions} />
       : LLMInstructionsButton,
