@@ -25,7 +25,7 @@ Ask the user which mode they prefer:
    ls -la package.json tsconfig.json bun.lock pnpm-lock.yaml package-lock.json .vscode AGENTS.md CLAUDE.md .claude .cursorrules 2>/dev/null; file AGENTS.md CLAUDE.md 2>/dev/null | grep -i link
    \`\`\`
    This finds all relevant files and detects symlinks. From lock file, determine package manager (bun/pnpm/npm). If multiple lock files, ask which to use. If none, ask preference.
-4. Check Effect Solutions CLI: run \`effect-solutions list\`. If missing, install. If output shows update available, update before continuing.
+4. Check Effect Solutions CLI: run \`effect-solutions list\`. If missing, install (using package name `effect-solutions`). If output shows update available, update before continuing.
 5. Create todo list (if you have the tool)
 
 **Checklist:**
