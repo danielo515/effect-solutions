@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { Effect, Array, Console } from "effect";
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,49 +24,52 @@ type LinkError = {
 };
 
 // Extract the slug from a filename (e.g., "04-services-and-layers.md" -> "services-and-layers")
-function getSlugFromFilename(filename: string): string {
-  return filename.replace(/^\d+-/, "").replace(/\.md$/, "");
-}
+const getSlugFromFilename = (filename: string): string =>
+  filename.replace(/^\d+-/, "").replace(/\.md$/, "");
 
 // Check if a slug exists in the docs directory
-async function slugExists(slug: string, docFiles: string[]): Promise<boolean> {
-  return docFiles.some((file) => getSlugFromFilename(file) === slug);
-}
+const slugExists = (slug: string, docFiles: string[]): boolean =>
+  docFiles.some((file) => getSlugFromFilename(file) === slug);
 
 // Check if an anchor exists in a file
-async function anchorExists(
+const anchorExists = (
   filepath: string,
   anchor: string,
-): Promise<boolean> {
-  const content = await readFile(filepath, "utf-8");
-  const lines = content.split("\n");
+): Effect.Effect<boolean, Error> =>
+  Effect.gen(function* () {
+    const content = yield* Effect.tryPromise({
+      try: () => readFile(filepath, "utf-8"),
+      catch: (error) => new Error(`Failed to read file: ${error}`),
+    });
 
-  // Convert anchor to the format that markdown headers use
-  // e.g., "Service-Driven Development" becomes "service-driven-development"
-  const normalizedAnchor = anchor.toLowerCase();
+    const lines = content.split("\n");
 
-  for (const line of lines) {
-    // Check for markdown headers (# Header)
-    const headerMatch = line.match(/^#{1,6}\s+(.+)$/);
-    if (headerMatch) {
-      const headerText = headerMatch[1];
-      // Normalize header text to slug format (lowercase, replace spaces/special chars with hyphens)
-      const headerSlug = headerText
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "");
+    // Convert anchor to the format that markdown headers use
+    // e.g., "Service-Driven Development" becomes "service-driven-development"
+    const normalizedAnchor = anchor.toLowerCase();
 
-      if (headerSlug === normalizedAnchor) {
-        return true;
+    for (const line of lines) {
+      // Check for markdown headers (# Header)
+      const headerMatch = line.match(/^#{1,6}\s+(.+)$/);
+      if (headerMatch) {
+        const headerText = headerMatch[1];
+        // Normalize header text to slug format (lowercase, replace spaces/special chars with hyphens)
+        const headerSlug = headerText
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+
+        if (headerSlug === normalizedAnchor) {
+          return true;
+        }
       }
     }
-  }
 
-  return false;
-}
+    return false;
+  });
 
 // Extract all markdown links from content
-function extractLinks(content: string, filename: string): Link[] {
+const extractLinks = (content: string, filename: string): Link[] => {
   const links: Link[] = [];
   const lines = content.split("\n");
 
@@ -87,93 +91,107 @@ function extractLinks(content: string, filename: string): Link[] {
   }
 
   return links;
-}
+};
 
 // Validate a link
-async function validateLink(
+const validateLink = (
   link: Link,
   docFiles: string[],
-): Promise<LinkError | null> {
-  const { href } = link;
+): Effect.Effect<LinkError | null, Error> =>
+  Effect.gen(function* () {
+    const { href } = link;
 
-  // Skip external links (http/https)
-  if (href.startsWith("http://") || href.startsWith("https://")) {
-    return null;
-  }
+    // Skip external links (http/https)
+    if (href.startsWith("http://") || href.startsWith("https://")) {
+      return null;
+    }
 
-  // Skip anchor-only links (same page)
-  if (href.startsWith("#")) {
-    return null;
-  }
+    // Skip anchor-only links (same page)
+    if (href.startsWith("#")) {
+      return null;
+    }
 
-  // Skip mailto links
-  if (href.startsWith("mailto:")) {
-    return null;
-  }
+    // Skip mailto links
+    if (href.startsWith("mailto:")) {
+      return null;
+    }
 
-  // Internal links should start with /
-  if (!href.startsWith("/")) {
-    return {
-      link,
-      error: `Link should start with / for internal docs (got: ${href})`,
-    };
-  }
+    // Internal links should start with /
+    if (!href.startsWith("/")) {
+      return {
+        link,
+        error: `Link should start with / for internal docs (got: ${href})`,
+      };
+    }
 
-  // Parse the link
-  const [path, anchor] = href.slice(1).split("#");
+    // Parse the link
+    const [path, anchor] = href.slice(1).split("#");
 
-  // Check if the slug exists
-  const exists = await slugExists(path, docFiles);
-  if (!exists) {
-    return {
-      link,
-      error: `Target doc not found: ${path}`,
-    };
-  }
+    // Check if the slug exists
+    const exists = slugExists(path, docFiles);
+    if (!exists) {
+      return {
+        link,
+        error: `Target doc not found: ${path}`,
+      };
+    }
 
-  // If there's an anchor, validate it exists in the target file
-  if (anchor) {
-    const targetFile = docFiles.find(
-      (file) => getSlugFromFilename(file) === path,
-    );
-    if (targetFile) {
-      const targetPath = join(DOCS_DIR, targetFile);
-      const anchorFound = await anchorExists(targetPath, anchor);
-      if (!anchorFound) {
-        return {
-          link,
-          error: `Anchor not found in ${path}: #${anchor}`,
-        };
+    // If there's an anchor, validate it exists in the target file
+    if (anchor) {
+      const targetFile = docFiles.find(
+        (file) => getSlugFromFilename(file) === path,
+      );
+      if (targetFile) {
+        const targetPath = join(DOCS_DIR, targetFile);
+        const anchorFound = yield* anchorExists(targetPath, anchor);
+        if (!anchorFound) {
+          return {
+            link,
+            error: `Anchor not found in ${path}: #${anchor}`,
+          };
+        }
       }
     }
-  }
 
-  return null;
-}
+    return null;
+  });
 
-async function main() {
-  console.log("Validating internal documentation links...\n");
+const main = Effect.gen(function* () {
+  yield* Console.log("Validating internal documentation links...\n");
 
   // Get all markdown files
-  const files = await readdir(DOCS_DIR);
+  const files = yield* Effect.tryPromise({
+    try: () => readdir(DOCS_DIR),
+    catch: (error) => new Error(`Failed to read docs directory: ${error}`),
+  });
+
   const docFiles = files.filter((f) => f.endsWith(".md"));
 
   if (docFiles.length === 0) {
-    console.log("No markdown files found");
+    yield* Console.log("No markdown files found");
     return;
   }
 
   // Collect all links from all files
-  const allLinks: Link[] = [];
-  for (const file of docFiles) {
-    const content = await readFile(join(DOCS_DIR, file), "utf-8");
-    // Skip draft docs
-    const fm = content.match(/^---\n([\s\S]*?)\n---/);
-    if (fm && /draft:\s*true/.test(fm[1])) continue;
+  const allLinks = yield* Effect.all(
+    docFiles.map((file) =>
+      Effect.gen(function* () {
+        const content = yield* Effect.tryPromise({
+          try: () => readFile(join(DOCS_DIR, file), "utf-8"),
+          catch: (error) => new Error(`Failed to read ${file}: ${error}`),
+        });
 
-    const links = extractLinks(content, file);
-    allLinks.push(...links);
-  }
+        // Skip draft docs
+        const fm = content.match(/^---\n([\s\S]*?)\n---/);
+        if (fm && /draft:\s*true/.test(fm[1])) {
+          return [];
+        }
+
+        return extractLinks(content, file);
+      }),
+    ),
+    { concurrency: "unbounded" },
+  ).pipe(Effect.map(Array.flatten));
 
   // Filter to only internal links (start with /)
   const internalLinks = allLinks.filter(
@@ -183,31 +201,34 @@ async function main() {
       !link.href.startsWith("https://"),
   );
 
-  console.log(`Found ${internalLinks.length} internal links to validate\n`);
+  yield* Console.log(
+    `Found ${internalLinks.length} internal links to validate\n`,
+  );
 
   // Validate all links
-  const errors: LinkError[] = [];
-  for (const link of internalLinks) {
-    const error = await validateLink(link, docFiles);
-    if (error) {
-      errors.push(error);
-    }
-  }
+  const errors = yield* Effect.all(
+    internalLinks.map((link) => validateLink(link, docFiles)),
+    { concurrency: "unbounded" },
+  ).pipe(Effect.map((results) => results.filter((e) => e !== null)));
 
   // Report results
   if (errors.length === 0) {
-    console.log("✓ All internal links are valid!");
+    yield* Console.log("✓ All internal links are valid!");
     return;
   }
 
-  console.error(`✗ Found ${errors.length} broken link(s):\n`);
-  for (const { link, error } of errors) {
-    console.error(`  ${link.file}:${link.line}`);
-    console.error(`    [${link.text}](${link.href})`);
-    console.error(`    ${error}\n`);
+  yield* Console.error(`✗ Found ${errors.length} broken link(s):\n`);
+  for (const error of errors) {
+    if (error) {
+      yield* Console.error(`  ${error.link.file}:${error.link.line}`);
+      yield* Console.error(`    [${error.link.text}](${error.link.href})`);
+      yield* Console.error(`    ${error.error}\n`);
+    }
   }
 
-  process.exit(1);
-}
+  yield* Effect.fail(new Error("Link validation failed"));
+});
 
-main();
+Effect.runPromise(main).catch(() => {
+  process.exit(1);
+});
