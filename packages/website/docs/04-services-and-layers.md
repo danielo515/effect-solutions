@@ -246,7 +246,7 @@ Benefits:
 - Type-checks immediately even though leaf services aren't implemented yet.
 - Adding production implementations later doesn't change Events code.
 
-See [Testing with Vitest](/testing-with-vitest#worked-example-testing-a-service) for a complete worked example testing this `Events` service with test layers.
+See [Testing with Vitest](./08-testing.md#worked-example-testing-a-service) for a complete worked example testing this `Events` service with test layers.
 
 ## Test Implementations
 
