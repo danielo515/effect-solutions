@@ -114,7 +114,7 @@ class Users extends Context.Tag("@app/Users")<
         ),
       )
 
-      // Use Effect.fn even for nullary methods (thunks) to enable tracing
+      // Use Effect.fn even for methods without arguments (thunks) to enable tracing
       const all = Effect.fn("Users.all")(function* () {
         const response = yield* http.get("https://api.example.com/users")
         return yield* HttpClientResponse.schemaBodyJson(Schema.Array(User))(response)
