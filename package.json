@@ -21,7 +21,8 @@
     "test": "bun run generate:manifest && bunx vitest run",
     "test:docs": "vitest run tests",
     "typecheck:docs": "bun scripts/typecheck-docs.ts",
-    "check": "biome check . --write && bunx tsc --build --force && bun run typecheck:docs && bun run test"
+    "validate:links": "bun scripts/validate-links.ts",
+    "check": "biome check . --write && bunx tsc --build --force && bun run typecheck:docs && bun run validate:links && bun run test"
   },
   "dependencies": {
     "@effect/platform": "^0.93.3",

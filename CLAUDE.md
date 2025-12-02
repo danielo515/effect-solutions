@@ -25,9 +25,10 @@ Effect best practices and patterns for humans and AI agents — https://www.effe
 bun install          # Install dependencies
 bun run dev          # Website dev server
 bun run dev:cli      # CLI dev mode
-bun run check        # Biome (writes), tsc --build, tests
+bun run check        # Biome (writes), tsc --build, link validation, tests
 bun --cwd packages/website run format  # Format website/docs
 bun --cwd packages/website run generate:og  # Rebuild Open Graph images
+bun run validate:links  # Validate internal documentation links
 ```
 
 ### Open Graph Images
@@ -109,6 +110,14 @@ group: Ecosystem
 
 - `bun run typecheck:docs` extracts every ```ts/```typescript code block and compiles it as an isolated module. Keep snippets self-contained.
 - Use `// hide-start` / `// hide-end` inside code fences to include helper stubs (types, imports, small services) that are needed for typechecking but should not render in the docs. This keeps examples focused while staying type-safe.
+
+### Link Validation
+
+- `bun run validate:links` checks all internal documentation links for correctness
+- Validates that linked docs exist (e.g., `/services-and-layers` points to a real doc)
+- Validates that anchors exist in target docs (e.g., `/testing#worked-example-testing-a-service` checks the anchor exists)
+- Runs automatically as part of `bun run check`
+- Internal links should use the format `/slug` or `/slug#anchor` (relative to the docs directory)
 
 ### MDX Components
 
