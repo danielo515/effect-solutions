@@ -193,7 +193,7 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
       <div className="max-w-screen-md mx-auto border-x border-neutral-800 flex items-center justify-between h-full">
         <Link
           href="/"
-          className="group flex-1 h-full cursor-default"
+          className="group flex-1 h-full"
           onBlur={handleBlur}
           onClick={handleClick}
           onFocus={handleFocus}
@@ -254,7 +254,7 @@ export function DocHeader({ docTitles }: DocHeaderProps) {
           type="button"
           onClick={handleToggleMute}
           onMouseEnter={handleMuteButtonHover}
-          className="flex items-center justify-center h-16 w-16 py-6 border-l border-neutral-800 hover:bg-neutral-900/50"
+          className="flex items-center justify-center h-16 w-16 py-6 border-l border-neutral-800 hover:bg-neutral-900/50 cursor-pointer"
           aria-label={isMuted ? "Unmute sounds" : "Mute sounds"}
         >
           {isMuted ? (

@@ -162,7 +162,7 @@ export function useMDXComponents(
             }}
           />
           <a
-            className="group/anchor flex items-center gap-3 px-6 text-inherit no-underline hover:opacity-90 cursor-default"
+            className="group/anchor flex items-center gap-3 px-6 text-inherit no-underline hover:opacity-90 cursor-pointer"
             href={headingId ? `#${headingId}` : undefined}
             aria-label={headingId ? `Link to section ${headingId}` : undefined}
           >

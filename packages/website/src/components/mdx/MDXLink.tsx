@@ -24,7 +24,7 @@ export function MDXLink(props: MDXLinkProps) {
     "text-blue-400/70 group-hover:text-blue-300/70 font-bold";
 
   const linkClassName = cn(
-    "group text-blue-400 hover:text-blue-300 no-underline cursor-pointer inline-flex items-center gap-1",
+    "group text-blue-400 hover:text-blue-300 no-underline inline-flex items-center gap-1",
     className,
   );
 

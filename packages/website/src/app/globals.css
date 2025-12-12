@@ -30,7 +30,7 @@
   }
 
   a {
-    @apply text-inherit no-underline cursor-auto;
+    @apply text-inherit no-underline;
   }
 
   a:hover {

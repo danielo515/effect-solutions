@@ -45,7 +45,7 @@ export function EffectOrFooter() {
                 href="https://effect.website"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-neutral-400 transition-colors cursor-default"
+                className="hover:text-neutral-400 transition-colors"
                 {...navSfxProps}
               >
                 {word}
@@ -60,7 +60,7 @@ export function EffectOrFooter() {
         href="https://effect.website/docs/error-management/unexpected-errors/#ordie"
         target="_blank"
         rel="noopener noreferrer"
-        className="hover:text-neutral-400 transition-colors cursor-default"
+        className="hover:text-neutral-400 transition-colors"
         {...navSfxProps}
       >
         <SkullIcon className="h-4 w-4" weight="fill" />

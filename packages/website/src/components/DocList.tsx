@@ -235,7 +235,7 @@ export function DocList({ docs }: DocListProps) {
           Begin with{" "}
           <Link
             href="/quick-start"
-            className="group text-blue-400 hover:text-blue-300 no-underline cursor-pointer inline-flex items-center gap-1"
+            className="group text-blue-400 hover:text-blue-300 no-underline inline-flex items-center gap-1"
             onMouseEnter={handleMouseEnter}
             onClick={handleClick}
           >
@@ -279,7 +279,7 @@ export function DocList({ docs }: DocListProps) {
                     }}
                     aria-selected={selectedIndex === currentIndex}
                     className={cn(
-                      "block px-6 py-8 hover:bg-neutral-900/50 cursor-default focus:outline-none focus-visible:outline-none",
+                      "block px-6 py-8 hover:bg-neutral-900/50 focus:outline-none focus-visible:outline-none",
                       selectedIndex === currentIndex && "bg-neutral-900",
                     )}
                     style={{

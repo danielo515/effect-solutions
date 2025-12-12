@@ -34,7 +34,7 @@ export function DocFooter({ docTitles, orderedSlugs }: DocFooterProps) {
             href={KIT_TWITTER_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none cursor-default"
+            className="flex items-center gap-2 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none"
             onMouseEnter={() => {
               setIsKitHovered(true);
               playHoverSfx();
@@ -87,7 +87,7 @@ export function DocFooter({ docTitles, orderedSlugs }: DocFooterProps) {
           prevSlug && prevTitle ? (
             <Link
               href={`/${prevSlug}`}
-              className="flex items-center gap-3 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none cursor-default"
+              className="flex items-center gap-3 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none"
               onMouseEnter={playHoverSfx}
               onClick={playClickSfx}
             >
@@ -97,7 +97,7 @@ export function DocFooter({ docTitles, orderedSlugs }: DocFooterProps) {
           ) : (
             <Link
               href="/"
-              className="flex items-center gap-3 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none cursor-default"
+              className="flex items-center gap-3 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none"
               onMouseEnter={playHoverSfx}
               onClick={playClickSfx}
             >
@@ -111,7 +111,7 @@ export function DocFooter({ docTitles, orderedSlugs }: DocFooterProps) {
         {nextSlug && nextTitle ? (
           <Link
             href={`/${nextSlug}`}
-            className="flex items-center gap-3 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none cursor-default"
+            className="flex items-center gap-3 text-sm font-normal uppercase tracking-wider text-neutral-500 hover:text-neutral-300 no-underline !select-none"
             onMouseEnter={playHoverSfx}
             onClick={playClickSfx}
           >
