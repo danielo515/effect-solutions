@@ -41,7 +41,7 @@
     "@effect/platform-bun": "^0.86.0",
     "@effect/platform-node": "^0.103.0",
     "@effect/vitest": "^0.27.0",
-    "vitest": "^4.0.15"
+    "vitest": "^3.2.4"
   },
   "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
 }
