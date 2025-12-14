@@ -1,5 +1,15 @@
 # @effect-best-practices/website
 
+## 0.4.19
+
+### Patch Changes
+
+- [#19](https://github.com/kitlangton/effect-solutions/pull/19) [`b28d951`](https://github.com/kitlangton/effect-solutions/commit/b28d951a1c3ada7a29ee48e2c9f720b52a57211d) Thanks [@f15u](https://github.com/f15u)! - add service `use` pattern
+
+- [`3953a68`](https://github.com/kitlangton/effect-solutions/commit/3953a688c11d0bc20865fcdbe668c0f06959837a) Thanks [@kitlangton](https://github.com/kitlangton)! - Clarify that Schema lives in `effect/Schema` and prefer per-test layers over `it.layer` unless you deliberately share state.
+
+- [#26](https://github.com/kitlangton/effect-solutions/pull/26) [`2545267`](https://github.com/kitlangton/effect-solutions/commit/25452675a9aa7a78cb91a5665de12c9b16b2df36) Thanks [@urban](https://github.com/urban)! - Strengthen the visual affordance for interactive elements
+
 ## 0.4.18
 
 ### Patch Changes
