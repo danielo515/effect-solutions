@@ -81,7 +81,7 @@ Once cloned, add a reference in `CLAUDE.md` or `AGENTS.md`:
 ```markdown
 ## Local Effect Source
 
-The Effect repository is cloned to `~/code/opensource/effect` for reference. 
+The Effect repository is cloned to `~/.local/share/effect-solutions/effect` for reference. 
 Use this to explore APIs, find usage examples, and understand implementation 
 details when the documentation isn't enough.
 ```
