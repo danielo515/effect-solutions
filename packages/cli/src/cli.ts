@@ -191,7 +191,11 @@ if (import.meta.main) {
     Effect.gen(function* () {
       const notifier = yield* UpdateNotifier
       yield* notifier.check(CLI_NAME, CLI_VERSION)
-      yield* runCli(process.argv)
+      // In dev mode (bun src/cli.ts args...), argv has 2 prefix elements.
+      // In compiled binary mode (./effect-solutions args...), argv has 1.
+      // Detect by checking if argv[1] looks like a script path.
+      const prefixLen = process.argv[1]?.match(/\.(ts|js|mjs)$/) ? 2 : 1
+      yield* runCli(process.argv.slice(prefixLen))
     }),
     Effect.provide(MainLayer),
     Effect.tapError((error) => Console.error(pc.red(`Error: ${error}`))),
