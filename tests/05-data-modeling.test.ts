@@ -9,7 +9,7 @@ describe("05-data-modeling", () => {
       // biome-ignore lint/correctness/noUnusedVariables: Used for type annotation
       type UserId = typeof UserId.Type
 
-      class User extends Schema.Class<User>("User")({
+      class User extends Schema.Class("User")({
         id: UserId,
         name: Schema.String,
         email: Schema.String,
@@ -22,8 +22,8 @@ describe("05-data-modeling", () => {
       }
 
       // Usage
-      const user = User.make({
-        id: UserId.make("user-123"),
+      const user = new User({
+        id: UserId.makeUnsafe("user-123"),
         name: "Alice",
         email: "alice@example.com",
         createdAt: new Date("2025-01-01T00:00:00.000Z"),
@@ -39,7 +39,7 @@ describe("05-data-modeling", () => {
 
   describe("Schema Unions", () => {
     it("should create simple literal unions", () => {
-      const Status = Schema.Literal("pending", "active", "completed")
+      const Status = Schema.Literals(["pending", "active", "completed"])
       type Status = typeof Status.Type
 
       const decoded = Schema.decodeUnknownSync(Status)("pending")
@@ -52,16 +52,16 @@ describe("05-data-modeling", () => {
 
     it("should create and match TaggedClass unions", () => {
       // Define variants with a tag field
-      class Success extends Schema.TaggedClass<Success>()("Success", {
+      class Success extends Schema.TaggedClass("Success")("Success", {
         value: Schema.Number,
       }) {}
 
-      class Failure extends Schema.TaggedClass<Failure>()("Failure", {
+      class Failure extends Schema.TaggedClass("Failure")("Failure", {
         error: Schema.String,
       }) {}
 
       // Create the union
-      const Result = Schema.Union(Success, Failure)
+      const Result = Schema.Union([Success, Failure])
       type Result = typeof Result.Type
 
       // Pattern 1: Match.value - inline matching
@@ -87,8 +87,8 @@ describe("05-data-modeling", () => {
         Match.orElse(() => false),
       )
 
-      const success = Success.make({ value: 42 })
-      const failure = Failure.make({ error: "oops" })
+      const success = new Success({ value: 42 })
+      const failure = new Failure({ error: "oops" })
 
       strictEqual(handleResult(success), "Got: 42")
       strictEqual(handleResult(failure), "Error: oops")
@@ -113,15 +113,18 @@ describe("05-data-modeling", () => {
       const Email = Schema.String.pipe(Schema.brand("Email"))
       type Email = typeof Email.Type
 
-      const Port = Schema.Int.pipe(Schema.between(1, 65535), Schema.brand("Port"))
+      const Port = Schema.Int.pipe(
+        Schema.check(Schema.isBetween({ minimum: 1, maximum: 65535 })),
+        Schema.brand("Port"),
+      )
       // biome-ignore lint/correctness/noUnusedVariables: Used for type annotation
       type Port = typeof Port.Type
 
       // Usage - impossible to mix types
-      const userId = UserId.make("user-123")
-      const _postId = PostId.make("post-456")
-      const email = Email.make("alice@example.com")
-      const port = Port.make(8080)
+      const userId = UserId.makeUnsafe("user-123")
+      const _postId = PostId.makeUnsafe("post-456")
+      const email = Email.makeUnsafe("alice@example.com")
+      const port = Port.makeUnsafe(8080)
 
       function getUser(id: UserId) {
         return id
@@ -142,19 +145,22 @@ describe("05-data-modeling", () => {
 
     it("should support Object.assign for adding methods to branded schemas", () => {
       const GitHubUsername = Object.assign(
-        Schema.String.pipe(Schema.pattern(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i), Schema.brand("GitHubUsername")),
+        Schema.String.pipe(
+          Schema.check(Schema.isPattern(/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i)),
+          Schema.brand("GitHubUsername"),
+        ),
         {
           fromUrl(url: string): Option.Option<typeof GitHubUsername.Type> {
             const match = url.match(/github\.com\/([^/]+)/)
-            return match ? Option.some(GitHubUsername.make(match[1])) : Option.none()
+            return match ? Option.some(GitHubUsername.makeUnsafe(match[1])) : Option.none()
           },
           toProfileUrl: (u: typeof GitHubUsername.Type) => `https://github.com/${u}`,
         },
       )
       type GitHubUsername = typeof GitHubUsername.Type
 
-      // .make() still works
-      const username = GitHubUsername.make("octocat")
+      // .makeUnsafe() works
+      const username = GitHubUsername.makeUnsafe("octocat")
       strictEqual(username, "octocat")
 
       // Custom methods work
@@ -172,7 +178,7 @@ describe("05-data-modeling", () => {
       // Schema validation still works
       let threw = false
       try {
-        GitHubUsername.make("invalid--username") // double hyphen not allowed
+        GitHubUsername.makeUnsafe("invalid--username") // double hyphen not allowed
       } catch {
         threw = true
       }
@@ -187,33 +193,33 @@ describe("05-data-modeling", () => {
   })
 
   describe("JSON Encoding & Decoding", () => {
-    it.effect("should parse and encode JSON strings with parseJson", () => {
-      const Row = Schema.Literal("A", "B", "C", "D", "E", "F", "G", "H")
-      const Column = Schema.Literal("1", "2", "3", "4", "5", "6", "7", "8")
+    it.effect("should parse and encode JSON strings with fromJsonString", () => {
+      const Row = Schema.Literals(["A", "B", "C", "D", "E", "F", "G", "H"])
+      const Column = Schema.Literals(["1", "2", "3", "4", "5", "6", "7", "8"])
 
-      class Position extends Schema.Class<Position>("Position")({
+      class Position extends Schema.Class("Position")({
         row: Row,
         column: Column,
       }) {}
 
-      class Move extends Schema.Class<Move>("Move")({
+      class Move extends Schema.Class("Move")({
         from: Position,
         to: Position,
       }) {}
 
-      // parseJson combines JSON.parse + schema decoding
+      // fromJsonString combines JSON.parse + schema decoding
       // MoveFromJson is a schema that takes a JSON string and returns a Move
-      const MoveFromJson = Schema.parseJson(Move)
+      const MoveFromJson = Schema.fromJsonString(Move)
 
       return Effect.gen(function* () {
         // Parse and validate JSON string in one step
         // Use MoveFromJson (not Move) to decode from JSON string
         const jsonString = '{"from":{"row":"A","column":"1"},"to":{"row":"B","column":"2"}}'
-        const move = yield* Schema.decodeUnknown(MoveFromJson)(jsonString)
+        const move = yield* Schema.decodeUnknownEffect(MoveFromJson)(jsonString)
 
         // Encode to JSON string in one step (typed as string)
         // Use MoveFromJson (not Move) to encode to JSON string
-        const json = yield* Schema.encode(MoveFromJson)(move)
+        const json = yield* Schema.encodeEffect(MoveFromJson)(move)
 
         strictEqual(move instanceof Move, true)
         strictEqual(move.from.row, "A")

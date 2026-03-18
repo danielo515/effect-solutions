@@ -1,6 +1,6 @@
 import { describe, it } from "@effect/vitest"
 import { assertSome, assertTrue, strictEqual } from "@effect/vitest/utils"
-import { Config, ConfigProvider, Context, Effect, Layer, Redacted, Schema } from "effect"
+import { Config, ConfigProvider, Effect, Layer, Redacted, Schema, ServiceMap } from "effect"
 
 describe("07-config", () => {
   describe("Basic Config Usage", () => {
@@ -8,20 +8,16 @@ describe("07-config", () => {
       Effect.gen(function* () {
         const program = Effect.gen(function* () {
           const apiKey = yield* Config.redacted("API_KEY")
-          const port = yield* Config.integer("PORT")
+          const port = yield* Config.int("PORT")
           return { apiKey: Redacted.value(apiKey), port }
         })
 
-        const testConfigProvider = ConfigProvider.fromMap(
-          new Map([
-            ["API_KEY", "test-key-123"],
-            ["PORT", "3000"],
-          ]),
-        )
+        const testConfigProvider = ConfigProvider.fromUnknown({
+          API_KEY: "test-key-123",
+          PORT: "3000",
+        })
 
-        const TestConfigLayer = Layer.setConfigProvider(testConfigProvider)
-
-        const result = yield* program.pipe(Effect.provide(TestConfigLayer))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfigProvider)))
 
         strictEqual(result.apiKey, "test-key-123")
         strictEqual(result.port, 3000)
@@ -32,20 +28,18 @@ describe("07-config", () => {
       Effect.gen(function* () {
         const program = Effect.gen(function* () {
           const host = yield* Config.string("HOST")
-          const port = yield* Config.integer("PORT")
+          const port = yield* Config.int("PORT")
           const debug = yield* Config.boolean("DEBUG")
           return { host, port, debug }
         })
 
-        const testConfig = ConfigProvider.fromMap(
-          new Map([
-            ["HOST", "localhost"],
-            ["PORT", "8080"],
-            ["DEBUG", "true"],
-          ]),
-        )
+        const testConfig = ConfigProvider.fromUnknown({
+          HOST: "localhost",
+          PORT: "8080",
+          DEBUG: "true",
+        })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         strictEqual(result.host, "localhost")
         strictEqual(result.port, 8080)
@@ -57,14 +51,14 @@ describe("07-config", () => {
   describe("Config Layer Pattern", () => {
     it.effect("creates config service with layer", () =>
       Effect.gen(function* () {
-        class ApiConfig extends Context.Tag("@app/ApiConfig")<
+        class ApiConfig extends ServiceMap.Service<
           ApiConfig,
           {
             readonly apiKey: Redacted.Redacted<string>
             readonly baseUrl: string
             readonly timeout: number
           }
-        >() {
+        >()("@app/ApiConfig") {
           static readonly layer = Layer.effect(
             ApiConfig,
             Effect.gen(function* () {
@@ -72,20 +66,17 @@ describe("07-config", () => {
               const baseUrl = yield* Config.string("API_BASE_URL").pipe(
                 Config.orElse(() => Config.succeed("https://api.example.com")),
               )
-              const timeout = yield* Config.integer("API_TIMEOUT").pipe(Config.orElse(() => Config.succeed(30000)))
+              const timeout = yield* Config.int("API_TIMEOUT").pipe(Config.orElse(() => Config.succeed(30000)))
 
-              return ApiConfig.of({ apiKey, baseUrl, timeout })
+              return { apiKey, baseUrl, timeout }
             }),
           )
 
-          static readonly testLayer = Layer.succeed(
-            ApiConfig,
-            ApiConfig.of({
-              apiKey: Redacted.make("test-key"),
-              baseUrl: "https://test.example.com",
-              timeout: 5000,
-            }),
-          )
+          static readonly testLayer = Layer.succeed(ApiConfig, {
+            apiKey: Redacted.make("test-key"),
+            baseUrl: "https://test.example.com",
+            timeout: 5000,
+          })
         }
 
         const program = Effect.gen(function* () {
@@ -107,33 +98,31 @@ describe("07-config", () => {
 
     it.effect("uses real config with provider", () =>
       Effect.gen(function* () {
-        class DbConfig extends Context.Tag("@app/DbConfig")<
+        class DbConfig extends ServiceMap.Service<
           DbConfig,
           {
             readonly host: string
             readonly port: number
             readonly database: string
           }
-        >() {
+        >()("@app/DbConfig") {
           static readonly layer = Layer.effect(
             DbConfig,
             Effect.gen(function* () {
               const host = yield* Config.string("DB_HOST")
-              const port = yield* Config.integer("DB_PORT")
+              const port = yield* Config.int("DB_PORT")
               const database = yield* Config.string("DB_NAME")
 
-              return DbConfig.of({ host, port, database })
+              return { host, port, database }
             }),
           )
         }
 
-        const testConfig = ConfigProvider.fromMap(
-          new Map([
-            ["DB_HOST", "localhost"],
-            ["DB_PORT", "5432"],
-            ["DB_NAME", "testdb"],
-          ]),
-        )
+        const testConfig = ConfigProvider.fromUnknown({
+          DB_HOST: "localhost",
+          DB_PORT: "5432",
+          DB_NAME: "testdb",
+        })
 
         const program = Effect.gen(function* () {
           const config = yield* DbConfig
@@ -142,7 +131,7 @@ describe("07-config", () => {
 
         const result = yield* program.pipe(
           Effect.provide(DbConfig.layer),
-          Effect.provide(Layer.setConfigProvider(testConfig)),
+          Effect.provide(ConfigProvider.layer(testConfig)),
         )
 
         strictEqual(result.host, "localhost")
@@ -156,7 +145,7 @@ describe("07-config", () => {
     it.effect("uses orElse for defaults", () =>
       Effect.gen(function* () {
         const program = Effect.gen(function* () {
-          const port = yield* Config.integer("PORT").pipe(Config.orElse(() => Config.succeed(3000)))
+          const port = yield* Config.int("PORT").pipe(Config.orElse(() => Config.succeed(3000)))
 
           const host = yield* Config.string("HOST").pipe(Config.orElse(() => Config.succeed("0.0.0.0")))
 
@@ -164,9 +153,9 @@ describe("07-config", () => {
         })
 
         // Empty config - should use defaults
-        const emptyConfig = ConfigProvider.fromMap(new Map())
+        const emptyConfig = ConfigProvider.fromUnknown({})
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(emptyConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(emptyConfig)))
 
         strictEqual(result.port, 3000)
         strictEqual(result.host, "0.0.0.0")
@@ -182,9 +171,9 @@ describe("07-config", () => {
           return { required, optional }
         })
 
-        const testConfig = ConfigProvider.fromMap(new Map([["REQUIRED", "value"]]))
+        const testConfig = ConfigProvider.fromUnknown({ REQUIRED: "value" })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         strictEqual(result.required, "value")
         assertTrue(result.optional._tag === "None")
@@ -198,9 +187,9 @@ describe("07-config", () => {
           return optional
         })
 
-        const testConfig = ConfigProvider.fromMap(new Map([["OPTIONAL", "present"]]))
+        const testConfig = ConfigProvider.fromUnknown({ OPTIONAL: "present" })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         assertSome(result, "present")
       }),
@@ -208,25 +197,26 @@ describe("07-config", () => {
   })
 
   describe("Validation with Schema", () => {
-    it.effect("validates with Schema.Config", () =>
+    it.effect("validates with Config.schema", () =>
       Effect.gen(function* () {
-        const Port = Schema.NumberFromString.pipe(Schema.int(), Schema.between(1, 65535))
-        const Environment = Schema.Literal("development", "staging", "production")
+        const Port = Schema.NumberFromString.pipe(
+          Schema.check(Schema.isInt()),
+          Schema.check(Schema.isBetween({ minimum: 1, maximum: 65535 })),
+        )
+        const Environment = Schema.Literals(["development", "staging", "production"])
 
         const program = Effect.gen(function* () {
-          const port = yield* Schema.Config("PORT", Port)
-          const env = yield* Schema.Config("ENV", Environment)
+          const port = yield* Config.schema(Port, "PORT")
+          const env = yield* Config.schema(Environment, "ENV")
           return { port, env }
         })
 
-        const testConfig = ConfigProvider.fromMap(
-          new Map([
-            ["PORT", "8080"],
-            ["ENV", "development"],
-          ]),
-        )
+        const testConfig = ConfigProvider.fromUnknown({
+          PORT: "8080",
+          ENV: "development",
+        })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         strictEqual(result.port, 8080)
         strictEqual(result.env, "development")
@@ -235,16 +225,20 @@ describe("07-config", () => {
 
     it.effect("validates with branded types", () =>
       Effect.gen(function* () {
-        const Port = Schema.NumberFromString.pipe(Schema.int(), Schema.between(1, 65535), Schema.brand("Port"))
+        const Port = Schema.NumberFromString.pipe(
+          Schema.check(Schema.isInt()),
+          Schema.check(Schema.isBetween({ minimum: 1, maximum: 65535 })),
+          Schema.brand("Port"),
+        )
 
         const program = Effect.gen(function* () {
-          const port = yield* Schema.Config("PORT", Port)
+          const port = yield* Config.schema(Port, "PORT")
           return port
         })
 
-        const testConfig = ConfigProvider.fromMap(new Map([["PORT", "3000"]]))
+        const testConfig = ConfigProvider.fromUnknown({ PORT: "3000" })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         strictEqual(result, 3000)
       }),
@@ -252,18 +246,21 @@ describe("07-config", () => {
 
     it.effect("handles validation errors", () =>
       Effect.gen(function* () {
-        const Port = Schema.NumberFromString.pipe(Schema.int(), Schema.between(1, 65535))
+        const Port = Schema.NumberFromString.pipe(
+          Schema.check(Schema.isInt()),
+          Schema.check(Schema.isBetween({ minimum: 1, maximum: 65535 })),
+        )
 
         const program = Effect.gen(function* () {
-          const port = yield* Schema.Config("PORT", Port)
+          const port = yield* Config.schema(Port, "PORT")
           return port
         })
 
-        const invalidConfig = ConfigProvider.fromMap(new Map([["PORT", "99999"]]))
+        const invalidConfig = ConfigProvider.fromUnknown({ PORT: "99999" })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(invalidConfig)), Effect.either)
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(invalidConfig)), Effect.result)
 
-        assertTrue(result._tag === "Left")
+        assertTrue(result._tag === "Failure")
       }),
     )
   })
@@ -275,9 +272,9 @@ describe("07-config", () => {
           return yield* Config.string("MY_VAR")
         })
 
-        const testConfig = ConfigProvider.fromMap(new Map([["MY_VAR", "hello"]]))
+        const testConfig = ConfigProvider.fromUnknown({ MY_VAR: "hello" })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         strictEqual(result, "hello")
       }),
@@ -287,18 +284,16 @@ describe("07-config", () => {
       Effect.gen(function* () {
         const program = Effect.gen(function* () {
           const number = yield* Config.number("FLOAT")
-          const integer = yield* Config.integer("INT")
+          const integer = yield* Config.int("INT")
           return { number, integer }
         })
 
-        const testConfig = ConfigProvider.fromMap(
-          new Map([
-            ["FLOAT", "3.14"],
-            ["INT", "42"],
-          ]),
-        )
+        const testConfig = ConfigProvider.fromUnknown({
+          FLOAT: "3.14",
+          INT: "42",
+        })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         strictEqual(result.number, 3.14)
         strictEqual(result.integer, 42)
@@ -312,9 +307,9 @@ describe("07-config", () => {
           return debug
         })
 
-        const testConfig = ConfigProvider.fromMap(new Map([["DEBUG", "true"]]))
+        const testConfig = ConfigProvider.fromUnknown({ DEBUG: "true" })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         strictEqual(result, true)
       }),
@@ -327,9 +322,9 @@ describe("07-config", () => {
           return Redacted.value(secret)
         })
 
-        const testConfig = ConfigProvider.fromMap(new Map([["SECRET", "my-secret"]]))
+        const testConfig = ConfigProvider.fromUnknown({ SECRET: "my-secret" })
 
-        const result = yield* program.pipe(Effect.provide(Layer.setConfigProvider(testConfig)))
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
 
         strictEqual(result, "my-secret")
       }),
@@ -339,38 +334,36 @@ describe("07-config", () => {
   describe("Complex Config Scenarios", () => {
     it.effect("combines multiple config sources", () =>
       Effect.gen(function* () {
-        class AppConfig extends Context.Tag("@app/AppConfig")<
+        class AppConfig extends ServiceMap.Service<
           AppConfig,
           {
             readonly server: { port: number; host: string }
             readonly database: { url: string }
             readonly features: { enableCache: boolean }
           }
-        >() {
+        >()("@app/AppConfig") {
           static readonly layer = Layer.effect(
             AppConfig,
             Effect.gen(function* () {
-              const port = yield* Config.integer("PORT")
+              const port = yield* Config.int("PORT")
               const host = yield* Config.string("HOST")
               const dbUrl = yield* Config.string("DATABASE_URL")
               const enableCache = yield* Config.boolean("ENABLE_CACHE").pipe(Config.orElse(() => Config.succeed(false)))
 
-              return AppConfig.of({
+              return {
                 server: { port, host },
                 database: { url: dbUrl },
                 features: { enableCache },
-              })
+              }
             }),
           )
         }
 
-        const testConfig = ConfigProvider.fromMap(
-          new Map([
-            ["PORT", "8080"],
-            ["HOST", "localhost"],
-            ["DATABASE_URL", "postgres://localhost/test"],
-          ]),
-        )
+        const testConfig = ConfigProvider.fromUnknown({
+          PORT: "8080",
+          HOST: "localhost",
+          DATABASE_URL: "postgres://localhost/test",
+        })
 
         const program = Effect.gen(function* () {
           const config = yield* AppConfig
@@ -379,7 +372,7 @@ describe("07-config", () => {
 
         const result = yield* program.pipe(
           Effect.provide(AppConfig.layer),
-          Effect.provide(Layer.setConfigProvider(testConfig)),
+          Effect.provide(ConfigProvider.layer(testConfig)),
         )
 
         strictEqual(result.server.port, 8080)

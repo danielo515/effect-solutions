@@ -1,33 +1,33 @@
 ---
 title: Command-Line Interfaces
-description: "Build CLIs with @effect/cli: commands, args, options, and service integration"
+description: "Build CLIs with Effect's CLI module: commands, arguments, flags, and service integration"
 order: 13
 group: Ecosystem
 ---
 
 # Command-Line Interfaces
 
-`@effect/cli` provides typed argument parsing, automatic help generation, and seamless integration with Effect services. This guide covers the 20% of the API that handles 80% of CLI use cases.
+Effect's CLI module provides typed argument parsing, automatic help generation, and seamless integration with Effect services. This guide covers the 20% of the API that handles 80% of CLI use cases.
 
 ## Installation
 
 ```bash
-bun add @effect/cli @effect/platform @effect/platform-bun
+bun add effect@beta @effect/platform-bun@beta
 ```
 
-For Node.js, use `@effect/platform-node` instead.
+For Node.js, use `@effect/platform-node@beta` instead.
 
 ## Minimal Example
 
 A greeting CLI with a name argument and `--shout` flag:
 
 ```typescript
-import { Args, Command, Options } from "@effect/cli"
-import { BunContext, BunRuntime } from "@effect/platform-bun"
+import { Argument, Command, Flag } from "effect/unstable/cli"
+import { BunServices, BunRuntime } from "@effect/platform-bun"
 import { Console, Effect } from "effect"
 
-const name = Args.text({ name: "name" }).pipe(Args.withDefault("World"))
-const shout = Options.boolean("shout").pipe(Options.withAlias("s"))
+const name = Argument.string("name").pipe(Argument.withDefault("World"))
+const shout = Flag.boolean("shout").pipe(Flag.withAlias("s"))
 
 const greet = Command.make("greet", { name, shout }, ({ name, shout }) => {
   const message = `Hello, ${name}!`
@@ -40,7 +40,7 @@ const cli = Command.run(greet, {
 })
 
 cli(process.argv).pipe(
-  Effect.provide(BunContext.layer),
+  Effect.provide(BunServices.layer),
   BunRuntime.runMain
 )
 ```
@@ -58,48 +58,48 @@ Built-in flags (`--help`, `--version`) work automatically.
 
 ## Arguments and Options
 
-**Arguments** are positional. **Options** are named flags. Options must come before arguments: `cmd --flag arg` works, `cmd arg --flag` doesn't.
+**Arguments** are positional. **Flags** are named options. Flags must come before arguments: `cmd --flag arg` works, `cmd arg --flag` doesn't.
 
 ### Argument Patterns
 
 ```typescript
-import { Args } from "@effect/cli"
+import { Argument } from "effect/unstable/cli"
 
 // Required text
-Args.text({ name: "file" })
+Argument.string("file")
 
 // Optional argument
-Args.text({ name: "output" }).pipe(Args.optional)
+Argument.string("output").pipe(Argument.optional)
 
 // With default
-Args.text({ name: "format" }).pipe(Args.withDefault("json"))
+Argument.string("format").pipe(Argument.withDefault("json"))
 
 // Repeated (zero or more)
-Args.text({ name: "files" }).pipe(Args.repeated)
+Argument.string("files").pipe(Argument.variadic())
 
 // At least one
-Args.text({ name: "files" }).pipe(Args.atLeast(1))
+Argument.string("files").pipe(Argument.atLeast(1))
 ```
 
-### Option Patterns
+### Flag Patterns
 
 ```typescript
-import { Options } from "@effect/cli"
+import { Flag } from "effect/unstable/cli"
 
 // Boolean flag
-Options.boolean("verbose").pipe(Options.withAlias("v"))
+Flag.boolean("verbose").pipe(Flag.withAlias("v"))
 
-// Text option
-Options.text("output").pipe(Options.withAlias("o"))
+// Text flag
+Flag.string("output").pipe(Flag.withAlias("o"))
 
 // Optional text
-Options.text("config").pipe(Options.optional)
+Flag.string("config").pipe(Flag.optional)
 
 // Choice from fixed values
-Options.choice("format", ["json", "yaml", "toml"])
+Flag.choice("format", ["json", "yaml", "toml"])
 
 // Integer
-Options.integer("count").pipe(Options.withDefault(10))
+Flag.integer("count").pipe(Flag.withDefault(10))
 ```
 
 ## Subcommands
@@ -107,10 +107,10 @@ Options.integer("count").pipe(Options.withDefault(10))
 Most CLIs have multiple commands. Use `Command.withSubcommands`:
 
 ```typescript
-import { Args, Command } from "@effect/cli"
+import { Argument, Command } from "effect/unstable/cli"
 import { Console } from "effect"
 
-const task = Args.text({ name: "task" })
+const task = Argument.string("task")
 
 const add = Command.make("add", { task }, ({ task }) =>
   Console.log(`Adding: ${task}`)
@@ -155,30 +155,30 @@ import { Array, Option, Schema } from "effect"
 const TaskId = Schema.Number.pipe(Schema.brand("TaskId"))
 type TaskId = typeof TaskId.Type
 
-class Task extends Schema.Class<Task>("Task")({
+class Task extends Schema.Class("Task")({
   id: TaskId,
   text: Schema.NonEmptyString,
   done: Schema.Boolean
 }) {
   toggle() {
-    return Task.make({ ...this, done: !this.done })
+    return new Task({ ...this, done: !this.done })
   }
 }
 
-class TaskList extends Schema.Class<TaskList>("TaskList")({
+class TaskList extends Schema.Class("TaskList")({
   tasks: Schema.Array(Task)
 }) {
-  static Json = Schema.parseJson(TaskList)
-  static empty = TaskList.make({ tasks: [] })
+  static Json = Schema.fromJsonString(TaskList)
+  static empty = new TaskList({ tasks: [] })
 
   get nextId(): TaskId {
-    if (this.tasks.length === 0) return TaskId.make(1)
-    return TaskId.make(Math.max(...this.tasks.map((t) => t.id)) + 1)
+    if (this.tasks.length === 0) return TaskId.makeUnsafe(1)
+    return TaskId.makeUnsafe(Math.max(...this.tasks.map((t) => t.id)) + 1)
   }
 
   add(text: string): [TaskList, Task] {
-    const task = Task.make({ id: this.nextId, text, done: false })
-    return [TaskList.make({ tasks: [...this.tasks, task] }), task]
+    const task = new Task({ id: this.nextId, text, done: false })
+    return [new TaskList({ tasks: [...this.tasks, task] }), task]
   }
 
   toggle(id: TaskId): [TaskList, Option.Option<Task>] {
@@ -187,7 +187,7 @@ class TaskList extends Schema.Class<TaskList>("TaskList")({
 
     const updated = this.tasks[index].toggle()
     const tasks = Array.modify(this.tasks, index, () => updated)
-    return [TaskList.make({ tasks }), Option.some(updated)]
+    return [new TaskList({ tasks }), Option.some(updated)]
   }
 
   find(id: TaskId): Option.Option<Task> {
@@ -207,31 +207,30 @@ class TaskList extends Schema.Class<TaskList>("TaskList")({
 ### The TaskRepo Service
 
 ```typescript
-import { Array, Context, Effect, Layer, Option, Schema } from "effect"
-import { FileSystem } from "@effect/platform"
+import { Array, Effect, FileSystem, Layer, Option, Schema, ServiceMap } from "effect"
 // hide-start
 const TaskId = Schema.Number.pipe(Schema.brand("TaskId"))
 type TaskId = typeof TaskId.Type
 
-class Task extends Schema.Class<Task>("Task")({
+class Task extends Schema.Class("Task")({
   id: TaskId,
   text: Schema.NonEmptyString,
   done: Schema.Boolean
 }) {
   toggle() {
-    return Task.make({ ...this, done: !this.done })
+    return new Task({ ...this, done: !this.done })
   }
 }
 
-class TaskList extends Schema.Class<TaskList>("TaskList")({
+class TaskList extends Schema.Class("TaskList")({
   tasks: Schema.Array(Task)
 }) {
-  static Json = Schema.parseJson(TaskList)
-  static empty = TaskList.make({ tasks: [] })
+  static Json = Schema.fromJsonString(TaskList)
+  static empty = new TaskList({ tasks: [] })
 
   add(text: string): [TaskList, Task] {
-    const task = Task.make({ id: this.nextId, text, done: false })
-    return [TaskList.make({ tasks: [...this.tasks, task] }), task]
+    const task = new Task({ id: this.nextId, text, done: false })
+    return [new TaskList({ tasks: [...this.tasks, task] }), task]
   }
 
   toggle(id: TaskId): [TaskList, Option.Option<Task>] {
@@ -239,18 +238,18 @@ class TaskList extends Schema.Class<TaskList>("TaskList")({
     if (index === -1) return [this, Option.none()]
     const updated = this.tasks[index]!.toggle()
     const tasks = Array.modify(this.tasks, index, () => updated)
-    return [TaskList.make({ tasks }), Option.some(updated)]
+    return [new TaskList({ tasks }), Option.some(updated)]
   }
 
   get nextId(): TaskId {
-    if (this.tasks.length === 0) return TaskId.make(1)
-    return TaskId.make(Math.max(...this.tasks.map((t) => t.id)) + 1)
+    if (this.tasks.length === 0) return TaskId.makeUnsafe(1)
+    return TaskId.makeUnsafe(Math.max(...this.tasks.map((t) => t.id)) + 1)
   }
 }
 
 // hide-end
 
-class TaskRepo extends Context.Tag("TaskRepo")<
+class TaskRepo extends ServiceMap.Service<
   TaskRepo,
   {
     readonly list: (all?: boolean) => Effect.Effect<ReadonlyArray<Task>>
@@ -258,7 +257,7 @@ class TaskRepo extends Context.Tag("TaskRepo")<
     readonly toggle: (id: TaskId) => Effect.Effect<Option.Option<Task>>
     readonly clear: () => Effect.Effect<void>
   }
->() {
+>()("TaskRepo") {
   static layer = Layer.effect(
     TaskRepo,
     Effect.gen(function* () {
@@ -268,12 +267,12 @@ class TaskRepo extends Context.Tag("TaskRepo")<
       // Helpers
       const load = Effect.gen(function* () {
         const content = yield* fs.readFileString(path)
-        return yield* Schema.decode(TaskList.Json)(content)
+        return yield* Schema.decodeEffect(TaskList.Json)(content)
       }).pipe(Effect.orElseSucceed(() => TaskList.empty))
 
       const save = (list: TaskList) =>
         Effect.gen(function* () {
-          const json = yield* Schema.encode(TaskList.Json)(list)
+          const json = yield* Schema.encodeEffect(TaskList.Json)(list)
           yield* fs.writeFileString(path, json)
         })
 
@@ -311,8 +310,8 @@ class TaskRepo extends Context.Tag("TaskRepo")<
 ### The CLI Commands
 
 ```typescript
-import { Args, Command, Options } from "@effect/cli"
-import { Console, Context, Effect, Option, Schema } from "effect"
+import { Argument, Command, Flag } from "effect/unstable/cli"
+import { Console, Effect, Option, Schema, ServiceMap } from "effect"
 
 // hide-start
 // Minimal stubs to keep this example self-contained for typechecking
@@ -320,7 +319,7 @@ const TaskId = Schema.Number.pipe(Schema.brand("TaskId"))
 type TaskId = typeof TaskId.Type
 type Task = { id: number; text: string; done: boolean }
 
-class TaskRepo extends Context.Tag("TaskRepo")<
+class TaskRepo extends ServiceMap.Service<
   TaskRepo,
   {
     readonly add: (text: string) => Effect.Effect<Task>
@@ -328,12 +327,12 @@ class TaskRepo extends Context.Tag("TaskRepo")<
     readonly toggle: (id: TaskId) => Effect.Effect<Option.Option<Task>>
     readonly clear: () => Effect.Effect<void>
   }
->() {}
+>()("TaskRepo") {}
 // hide-end
 
 // add <task>
-const text = Args.text({ name: "task" }).pipe(
-  Args.withDescription("The task description")
+const text = Argument.string("task").pipe(
+  Argument.withDescription("The task description")
 )
 
 const addCommand = Command.make("add", { text }, ({ text }) =>
@@ -345,9 +344,9 @@ const addCommand = Command.make("add", { text }, ({ text }) =>
 ).pipe(Command.withDescription("Add a new task"))
 
 // list [--all]
-const all = Options.boolean("all").pipe(
-  Options.withAlias("a"),
-  Options.withDescription("Show all tasks including completed")
+const all = Flag.boolean("all").pipe(
+  Flag.withAlias("a"),
+  Flag.withDescription("Show all tasks including completed")
 )
 
 const listCommand = Command.make("list", { all }, ({ all }) =>
@@ -368,9 +367,9 @@ const listCommand = Command.make("list", { all }, ({ all }) =>
 ).pipe(Command.withDescription("List pending tasks"))
 
 // toggle <id>
-const id = Args.integer({ name: "id" }).pipe(
-  Args.withSchema(TaskId),
-  Args.withDescription("The task ID to toggle")
+const id = Argument.integer("id").pipe(
+  Argument.withSchema(TaskId),
+  Argument.withDescription("The task ID to toggle")
 )
 
 const toggleCommand = Command.make("toggle", { id }, ({ id }) =>
@@ -403,14 +402,14 @@ const app = Command.make("tasks", {}).pipe(
 ### Wiring It Together
 
 ```typescript
-import { BunContext, BunRuntime } from "@effect/platform-bun"
+import { BunServices, BunRuntime } from "@effect/platform-bun"
 
 const cli = Command.run(app, {
   name: "tasks",
   version: "1.0.0"
 })
 
-const mainLayer = Layer.provideMerge(TaskRepo.layer, BunContext.layer)
+const mainLayer = Layer.provideMerge(TaskRepo.layer, BunServices.layer)
 
 cli(process.argv).pipe(Effect.provide(mainLayer), BunRuntime.runMain)
 ```
@@ -459,15 +458,15 @@ The tasks persist to `tasks.json`:
 | Concept | API |
 |---------|-----|
 | Define command | `Command.make(name, config, handler)` |
-| Positional args | `Args.text`, `Args.integer`, `Args.optional`, `Args.repeated` |
-| Named options | `Options.boolean`, `Options.text`, `Options.choice` |
-| Option alias | `Options.withAlias("v")` |
-| Descriptions | `Args.withDescription`, `Options.withDescription`, `Command.withDescription` |
+| Positional args | `Argument.string`, `Argument.integer`, `Argument.optional`, `Argument.variadic()` |
+| Named flags | `Flag.boolean`, `Flag.string`, `Flag.choice` |
+| Flag alias | `Flag.withAlias("v")` |
+| Descriptions | `Argument.withDescription`, `Flag.withDescription`, `Command.withDescription` |
 | Subcommands | `Command.withSubcommands([...])` |
 | Run CLI | `Command.run(cmd, { name, version })` |
-| Platform layer | `BunContext.layer` or `NodeContext.layer` |
+| Platform layer | `BunServices.layer` or `NodeServices.layer` |
 
-For the full API, see the [@effect/cli documentation](https://effect-ts.github.io/effect/docs/cli).
+For the full API, see the [Effect CLI documentation](https://effect-ts.github.io/effect/docs/cli).
 
 ## Miscellaneous
 
@@ -476,7 +475,7 @@ For the full API, see the [@effect/cli documentation](https://effect-ts.github.i
 Import your version from `package.json` to keep it in sync with your published package:
 
 ```typescript
-import { Command } from "@effect/cli"
+import { Command } from "effect/unstable/cli"
 import pkg from "./package.json" with { type: "json" }
 
 // hide-start

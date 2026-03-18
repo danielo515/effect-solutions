@@ -1,6 +1,7 @@
 import { describe, it } from "@effect/vitest"
 import { strictEqual } from "@effect/vitest/utils"
-import { Effect, Fiber, Schedule, TestClock } from "effect"
+import { Effect, Fiber, Schedule } from "effect"
+import { TestClock } from "effect/testing"
 
 describe("03-basics", () => {
   describe("Effect.gen", () => {
@@ -185,7 +186,7 @@ describe("03-basics", () => {
 
         const retryPolicy = Schedule.exponential("1 millis").pipe(Schedule.compose(Schedule.recurs(3)))
 
-        const fiber = yield* flaky.pipe(Effect.retry(retryPolicy), Effect.fork)
+        const fiber = yield* flaky.pipe(Effect.retry(retryPolicy), Effect.forkChild)
         yield* TestClock.adjust("100 millis")
         const result = yield* Fiber.join(fiber)
 
@@ -194,21 +195,21 @@ describe("03-basics", () => {
       }),
     )
 
-    it.effect("timeoutFail fails slow effects", () =>
+    it.effect("timeoutOrElse fails slow effects", () =>
       Effect.gen(function* () {
         const slow = Effect.sleep("1 second").pipe(
           Effect.as("done"),
-          Effect.timeoutFail({
+          Effect.timeoutOrElse({
             duration: "10 millis",
-            onTimeout: () => "timeout" as const,
+            onTimeout: () => Effect.fail("timeout" as const),
           }),
         )
 
-        const fiber = yield* slow.pipe(Effect.either, Effect.fork)
+        const fiber = yield* slow.pipe(Effect.result, Effect.forkChild)
         yield* TestClock.adjust("20 millis")
         const result = yield* Fiber.join(fiber)
 
-        strictEqual(result._tag, "Left")
+        strictEqual(result._tag, "Failure")
       }),
     )
   })

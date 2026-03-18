@@ -1,6 +1,6 @@
 ---
 title: HTTP Clients
-description: "Build typed REST clients with @effect/platform and Schema"
+description: "Build typed REST clients with Effect's HTTP module and Schema"
 order: 11
 group: Ecosystem
 draft: true
@@ -8,20 +8,14 @@ draft: true
 
 # HTTP Clients
 
-`@effect/platform` provides a typed HTTP client that integrates with Schema for request/response validation. This guide covers the patterns you'll use most often.
-
-## Installation
-
-```bash
-bun add @effect/platform
-```
+Effect provides a typed HTTP client that integrates with Schema for request/response validation. This guide covers the patterns you'll use most often.
 
 ## Minimal Example
 
 Fetch a GitHub repository and decode with Schema:
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Schema } from "effect"
 
 const Repo = Schema.Struct({
@@ -52,7 +46,7 @@ Key points:
 ### Headers
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Schema } from "effect"
 
 // hide-start
@@ -81,7 +75,7 @@ Common header helpers:
 ### Query Parameters
 
 ```typescript
-import { HttpClientRequest } from "@effect/platform"
+import { HttpClientRequest } from "effect/unstable/http"
 
 const request = HttpClientRequest.get("https://api.github.com/search/repositories").pipe(
   HttpClientRequest.setUrlParam("q", "effect language:typescript"),
@@ -94,7 +88,7 @@ const request = HttpClientRequest.get("https://api.github.com/search/repositorie
 For requests with JSON body, use `HttpClientRequest.schemaBodyJson`. It returns an Effect because encoding can fail:
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Schema } from "effect"
 
 const CreateIssue = Schema.Struct({
@@ -133,7 +127,7 @@ createIssue("my-org", "my-repo", { title: "Bug", body: "Description" }).pipe(
 The most common pattern. Fails if the response isn't valid JSON or doesn't match the schema:
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Schema } from "effect"
 
 const User = Schema.Struct({
@@ -154,7 +148,7 @@ program.pipe(Effect.provide(FetchHttpClient.layer), Effect.runPromise)
 Use `matchStatus` to handle success and error cases differently:
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Schema } from "effect"
 
 const User = Schema.Struct({
@@ -184,7 +178,7 @@ getUser("effect-ts").pipe(Effect.provide(FetchHttpClient.layer), Effect.runPromi
 For simple cases where you just want to fail on non-2xx:
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Schema } from "effect"
 
 // hide-start
@@ -215,14 +209,14 @@ type UserId = typeof UserId.Type
 const RepoId = Schema.Number.pipe(Schema.brand("RepoId"))
 type RepoId = typeof RepoId.Type
 
-class User extends Schema.Class<User>("User")({
+class User extends Schema.Class("User")({
   id: UserId,
   login: Schema.String,
   name: Schema.NullOr(Schema.String),
   public_repos: Schema.Number,
 }) {}
 
-class Repo extends Schema.Class<Repo>("Repo")({
+class Repo extends Schema.Class("Repo")({
   id: RepoId,
   name: Schema.String,
   full_name: Schema.String,
@@ -234,8 +228,8 @@ class Repo extends Schema.Class<Repo>("Repo")({
 ### The API Service
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
-import { Context, Effect, Layer, Schema } from "effect"
+import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
+import { Effect, Layer, Schema, ServiceMap } from "effect"
 
 // hide-start
 const UserId = Schema.Number.pipe(Schema.brand("UserId"))
@@ -244,14 +238,14 @@ type UserId = typeof UserId.Type
 const RepoId = Schema.Number.pipe(Schema.brand("RepoId"))
 type RepoId = typeof RepoId.Type
 
-class User extends Schema.Class<User>("User")({
+class User extends Schema.Class("User")({
   id: UserId,
   login: Schema.String,
   name: Schema.NullOr(Schema.String),
   public_repos: Schema.Number,
 }) {}
 
-class Repo extends Schema.Class<Repo>("Repo")({
+class Repo extends Schema.Class("Repo")({
   id: RepoId,
   name: Schema.String,
   full_name: Schema.String,
@@ -260,14 +254,14 @@ class Repo extends Schema.Class<Repo>("Repo")({
 }) {}
 // hide-end
 
-class GitHubApi extends Context.Tag("GitHubApi")<
+class GitHubApi extends ServiceMap.Service<
   GitHubApi,
   {
     readonly getUser: (username: string) => Effect.Effect<User>
     readonly getRepo: (owner: string, repo: string) => Effect.Effect<Repo>
     readonly listRepos: (username: string) => Effect.Effect<ReadonlyArray<Repo>>
   }
->() {
+>()("GitHubApi") {
   static layer = Layer.effect(
     GitHubApi,
     Effect.gen(function* () {
@@ -302,8 +296,8 @@ class GitHubApi extends Context.Tag("GitHubApi")<
 ### Using the API
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
-import { Context, Effect, Layer, Schema } from "effect"
+import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
+import { Effect, Layer, Schema, ServiceMap } from "effect"
 
 // hide-start
 const UserId = Schema.Number.pipe(Schema.brand("UserId"))
@@ -312,14 +306,14 @@ type UserId = typeof UserId.Type
 const RepoId = Schema.Number.pipe(Schema.brand("RepoId"))
 type RepoId = typeof RepoId.Type
 
-class User extends Schema.Class<User>("User")({
+class User extends Schema.Class("User")({
   id: UserId,
   login: Schema.String,
   name: Schema.NullOr(Schema.String),
   public_repos: Schema.Number,
 }) {}
 
-class Repo extends Schema.Class<Repo>("Repo")({
+class Repo extends Schema.Class("Repo")({
   id: RepoId,
   name: Schema.String,
   full_name: Schema.String,
@@ -327,14 +321,14 @@ class Repo extends Schema.Class<Repo>("Repo")({
   language: Schema.NullOr(Schema.String),
 }) {}
 
-class GitHubApi extends Context.Tag("GitHubApi")<
+class GitHubApi extends ServiceMap.Service<
   GitHubApi,
   {
     readonly getUser: (username: string) => Effect.Effect<User>
     readonly getRepo: (owner: string, repo: string) => Effect.Effect<Repo>
     readonly listRepos: (username: string) => Effect.Effect<ReadonlyArray<Repo>>
   }
->() {
+>()("GitHubApi") {
   static layer = Layer.effect(
     GitHubApi,
     Effect.gen(function* () {
@@ -389,7 +383,7 @@ Use `HttpClient.mapRequest` to apply transformations to all requests.
 ### Base URL and Authentication
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientRequest } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/unstable/http"
 import { Effect, flow, Layer } from "effect"
 
 const GitHubClient = Layer.effect(
@@ -414,7 +408,7 @@ const GitHubClient = Layer.effect(
 HTTP client operations can fail with `HttpClientError`:
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Schema } from "effect"
 
 // hide-start
@@ -445,7 +439,7 @@ Error types:
 Use Effect's retry combinators:
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Schedule, Schema } from "effect"
 
 // hide-start
@@ -465,7 +459,7 @@ getRepoWithRetry.pipe(Effect.provide(FetchHttpClient.layer), Effect.runPromise)
 For transient errors only (rate limiting, timeouts, 5xx), use `HttpClient.retryTransient`:
 
 ```typescript
-import { FetchHttpClient, HttpClient, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientResponse } from "effect/unstable/http"
 import { Effect, Layer, Schema } from "effect"
 
 // hide-start
@@ -505,4 +499,4 @@ getRepo.pipe(Effect.provide(ResilientClient), Effect.runPromise)
 | Retry transient | `HttpClient.retryTransient({ times: 3 })` |
 | Provide client | `Effect.provide(FetchHttpClient.layer)` |
 
-For the full API, see the [@effect/platform documentation](https://effect-ts.github.io/effect/docs/platform).
+For the full API, see the [Effect HTTP documentation](https://effect-ts.github.io/effect/docs/platform).

@@ -1,25 +1,25 @@
 import { describe, it } from "@effect/vitest"
 import { deepStrictEqual, strictEqual } from "@effect/vitest/utils"
-import { Context, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema, ServiceMap } from "effect"
 
 describe("04-services-and-layers", () => {
   describe("Service Definition", () => {
-    it.effect("defines service with Context.Tag", () =>
+    it.effect("defines service with ServiceMap.Service", () =>
       Effect.gen(function* () {
-        class Database extends Context.Tag("@app/Database")<
+        class Database extends ServiceMap.Service<
           Database,
           {
             readonly query: (sql: string) => Effect.Effect<unknown[]>
             readonly execute: (sql: string) => Effect.Effect<void>
           }
-        >() {}
+        >()("@app/Database") {}
 
-        class Logger extends Context.Tag("@app/Logger")<
+        class Logger extends ServiceMap.Service<
           Logger,
           {
             readonly log: (message: string) => Effect.Effect<void>
           }
-        >() {}
+        >()("@app/Logger") {}
 
         // Test implementations
         const testDb = Layer.succeed(Database, {
@@ -50,9 +50,11 @@ describe("04-services-and-layers", () => {
   describe("Layer Implementation", () => {
     it.effect("creates layer with Layer.effect", () =>
       Effect.gen(function* () {
-        class Config extends Context.Tag("@app/Config")<Config, { readonly apiUrl: string }>() {}
+        class Config extends ServiceMap.Service<Config, { readonly apiUrl: string }>()("@app/Config") {}
 
-        class Api extends Context.Tag("@app/Api")<Api, { readonly fetch: (path: string) => Effect.Effect<string> }>() {
+        class Api extends ServiceMap.Service<Api, { readonly fetch: (path: string) => Effect.Effect<string> }>()(
+          "@app/Api",
+        ) {
           static readonly layer = Layer.effect(
             Api,
             Effect.gen(function* () {
@@ -60,7 +62,7 @@ describe("04-services-and-layers", () => {
 
               const fetch = (path: string) => Effect.succeed(`${config.apiUrl}${path}`)
 
-              return Api.of({ fetch })
+              return { fetch }
             }),
           )
         }
@@ -82,15 +84,15 @@ describe("04-services-and-layers", () => {
 
     it.effect("composes layers with dependencies", () =>
       Effect.gen(function* () {
-        class Logger extends Context.Tag("@app/Logger")<
+        class Logger extends ServiceMap.Service<
           Logger,
           { readonly log: (msg: string) => Effect.Effect<void> }
-        >() {}
+        >()("@app/Logger") {}
 
-        class Analytics extends Context.Tag("@app/Analytics")<
+        class Analytics extends ServiceMap.Service<
           Analytics,
           { readonly track: (event: string) => Effect.Effect<void> }
-        >() {
+        >()("@app/Analytics") {
           static readonly layer = Layer.effect(
             Analytics,
             Effect.gen(function* () {
@@ -101,7 +103,7 @@ describe("04-services-and-layers", () => {
                   yield* logger.log(`Tracking: ${event}`)
                 })
 
-              return Analytics.of({ track })
+              return { track }
             }),
           )
         }
@@ -132,20 +134,20 @@ describe("04-services-and-layers", () => {
   describe("Test Implementations", () => {
     it.effect("creates test layer with Layer.sync", () =>
       Effect.gen(function* () {
-        class Database extends Context.Tag("@app/Database")<
+        class Database extends ServiceMap.Service<
           Database,
           {
             readonly query: (sql: string) => Effect.Effect<unknown[]>
             readonly execute: (sql: string) => Effect.Effect<void>
           }
-        >() {
+        >()("@app/Database") {
           static readonly testLayer = Layer.sync(Database, () => {
             const records: Record<string, unknown> = {
               "user-1": { id: "user-1", name: "Alice" },
               "user-2": { id: "user-2", name: "Bob" },
             }
 
-            return Database.of({
+            return {
               query: (sql) => {
                 if (sql.includes("user-1")) {
                   return Effect.succeed([records["user-1"]])
@@ -153,7 +155,7 @@ describe("04-services-and-layers", () => {
                 return Effect.succeed(Object.values(records))
               },
               execute: (_sql) => Effect.void,
-            })
+            }
           })
         }
 
@@ -172,10 +174,10 @@ describe("04-services-and-layers", () => {
 
     it.effect("uses Layer.succeed for simple mocks", () =>
       Effect.gen(function* () {
-        class EmailService extends Context.Tag("@app/EmailService")<
+        class EmailService extends ServiceMap.Service<
           EmailService,
           { readonly send: (to: string, body: string) => Effect.Effect<void> }
-        >() {}
+        >()("@app/EmailService") {}
 
         const sentEmails: Array<{ to: string; body: string }> = []
 
@@ -204,13 +206,13 @@ describe("04-services-and-layers", () => {
   describe("Effect.fn within Services", () => {
     it.effect("uses Effect.fn for service methods with tracing", () =>
       Effect.gen(function* () {
-        class UserRepo extends Context.Tag("@app/UserRepo")<
+        class UserRepo extends ServiceMap.Service<
           UserRepo,
           {
             readonly findById: (id: string) => Effect.Effect<{ id: string; name: string }>
             readonly all: () => Effect.Effect<Array<{ id: string; name: string }>>
           }
-        >() {
+        >()("@app/UserRepo") {
           static readonly layer = Layer.succeed(UserRepo, {
             findById: Effect.fn("UserRepo.findById")(function* (id: string) {
               yield* Effect.logDebug(`Finding user ${id}`)
@@ -244,18 +246,18 @@ describe("04-services-and-layers", () => {
 
     it.effect("supports Effect.fn transformers (e.g., catchTag)", () =>
       Effect.gen(function* () {
-        class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
+        class NotFound extends Schema.TaggedErrorClass("NotFound")("NotFound", {
           id: Schema.String,
         }) {}
 
-        class Repo extends Context.Tag("@app/Repo")<
+        class Repo extends ServiceMap.Service<
           Repo,
           { readonly findById: (id: string) => Effect.Effect<string> }
-        >() {
+        >()("@app/Repo") {
           static readonly layer = Layer.succeed(Repo, {
             findById: Effect.fn("Repo.findById")(
               function* (id: string) {
-                yield* Effect.fail(NotFound.make({ id }))
+                yield* Effect.fail(new NotFound({ id }))
               },
               Effect.catchTag("NotFound", (error) => Effect.succeed(`missing:${error.id}`)),
             ),
@@ -277,34 +279,34 @@ describe("04-services-and-layers", () => {
     it.effect("orchestrates multiple leaf services", () =>
       Effect.gen(function* () {
         // Leaf services
-        class Users extends Context.Tag("@app/Users")<
+        class Users extends ServiceMap.Service<
           Users,
           {
             readonly findById: (id: string) => Effect.Effect<{ id: string; name: string }>
           }
-        >() {}
+        >()("@app/Users") {}
 
-        class Notifications extends Context.Tag("@app/Notifications")<
+        class Notifications extends ServiceMap.Service<
           Notifications,
           {
             readonly send: (userId: string, message: string) => Effect.Effect<void>
           }
-        >() {}
+        >()("@app/Notifications") {}
 
-        class Analytics extends Context.Tag("@app/Analytics")<
+        class Analytics extends ServiceMap.Service<
           Analytics,
           {
             readonly track: (event: string, data: unknown) => Effect.Effect<void>
           }
-        >() {}
+        >()("@app/Analytics") {}
 
         // Higher-level orchestration service
-        class UserService extends Context.Tag("@app/UserService")<
+        class UserService extends ServiceMap.Service<
           UserService,
           {
             readonly activate: (userId: string) => Effect.Effect<{ id: string; name: string }>
           }
-        >() {
+        >()("@app/UserService") {
           static readonly layer = Layer.effect(
             UserService,
             Effect.gen(function* () {
@@ -319,7 +321,7 @@ describe("04-services-and-layers", () => {
                 return user
               })
 
-              return UserService.of({ activate })
+              return { activate }
             }),
           )
         }
@@ -365,25 +367,25 @@ describe("04-services-and-layers", () => {
     it.effect("design with services first - contracts before implementations", () =>
       Effect.gen(function* () {
         // Define service contracts without implementations
-        class EmailService extends Context.Tag("@app/EmailService")<
+        class EmailService extends ServiceMap.Service<
           EmailService,
           { readonly send: (to: string, body: string) => Effect.Effect<void> }
-        >() {}
+        >()("@app/EmailService") {}
 
-        class PaymentService extends Context.Tag("@app/PaymentService")<
+        class PaymentService extends ServiceMap.Service<
           PaymentService,
           {
             readonly charge: (userId: string, amount: number) => Effect.Effect<string>
           }
-        >() {}
+        >()("@app/PaymentService") {}
 
         // Higher-level service that uses the contracts
-        class CheckoutService extends Context.Tag("@app/CheckoutService")<
+        class CheckoutService extends ServiceMap.Service<
           CheckoutService,
           {
             readonly process: (userId: string, amount: number) => Effect.Effect<string>
           }
-        >() {
+        >()("@app/CheckoutService") {
           static readonly layer = Layer.effect(
             CheckoutService,
             Effect.gen(function* () {
@@ -396,7 +398,7 @@ describe("04-services-and-layers", () => {
                 return txId
               })
 
-              return CheckoutService.of({ process })
+              return { process }
             }),
           )
         }
@@ -429,15 +431,15 @@ describe("04-services-and-layers", () => {
   describe("Service Composition", () => {
     it.effect("merges independent layers", () =>
       Effect.gen(function* () {
-        class ServiceA extends Context.Tag("@app/ServiceA")<
+        class ServiceA extends ServiceMap.Service<
           ServiceA,
           { readonly getValue: () => Effect.Effect<string> }
-        >() {}
+        >()("@app/ServiceA") {}
 
-        class ServiceB extends Context.Tag("@app/ServiceB")<
+        class ServiceB extends ServiceMap.Service<
           ServiceB,
           { readonly getValue: () => Effect.Effect<number> }
-        >() {}
+        >()("@app/ServiceB") {}
 
         const layerA = Layer.succeed(ServiceA, {
           getValue: () => Effect.succeed("A"),
@@ -463,19 +465,19 @@ describe("04-services-and-layers", () => {
 
     it.effect("chains dependent layers", () =>
       Effect.gen(function* () {
-        class Config extends Context.Tag("@app/Config")<Config, { readonly prefix: string }>() {}
+        class Config extends ServiceMap.Service<Config, { readonly prefix: string }>()("@app/Config") {}
 
-        class Formatter extends Context.Tag("@app/Formatter")<
+        class Formatter extends ServiceMap.Service<
           Formatter,
           { readonly format: (msg: string) => Effect.Effect<string> }
-        >() {
+        >()("@app/Formatter") {
           static readonly layer = Layer.effect(
             Formatter,
             Effect.gen(function* () {
               const config = yield* Config
-              return Formatter.of({
+              return {
                 format: (msg) => Effect.succeed(`[${config.prefix}] ${msg}`),
-              })
+              }
             }),
           )
         }
@@ -495,12 +497,12 @@ describe("04-services-and-layers", () => {
 
     it.effect("Layer.provide satisfies dependencies", () =>
       Effect.gen(function* () {
-        class Config extends Context.Tag("@app/Config")<Config, { readonly url: string }>() {}
+        class Config extends ServiceMap.Service<Config, { readonly url: string }>()("@app/Config") {}
 
-        class Database extends Context.Tag("@app/Database")<
+        class Database extends ServiceMap.Service<
           Database,
           { readonly query: () => Effect.Effect<string> }
-        >() {
+        >()("@app/Database") {
           static readonly layer = Layer.effect(
             Database,
             Effect.gen(function* () {
@@ -525,9 +527,12 @@ describe("04-services-and-layers", () => {
 
     it.effect("Layer.provideMerge exposes the provider", () =>
       Effect.gen(function* () {
-        class Config extends Context.Tag("@app/Config")<Config, { readonly env: string }>() {}
+        class Config extends ServiceMap.Service<Config, { readonly env: string }>()("@app/Config") {}
 
-        class Logger extends Context.Tag("@app/Logger")<Logger, { readonly log: () => Effect.Effect<string> }>() {
+        class Logger extends ServiceMap.Service<
+          Logger,
+          { readonly log: () => Effect.Effect<string> }
+        >()("@app/Logger") {
           static readonly layer = Layer.effect(
             Logger,
             Effect.gen(function* () {
@@ -556,14 +561,17 @@ describe("04-services-and-layers", () => {
   describe("Providing Layers to Effects", () => {
     it.effect("provide once at entry point", () =>
       Effect.gen(function* () {
-        class Config extends Context.Tag("@app/Config")<Config, { readonly name: string }>() {}
+        class Config extends ServiceMap.Service<Config, { readonly name: string }>()("@app/Config") {}
 
-        class Logger extends Context.Tag("@app/Logger")<
+        class Logger extends ServiceMap.Service<
           Logger,
           { readonly info: (msg: string) => Effect.Effect<void> }
-        >() {}
+        >()("@app/Logger") {}
 
-        class App extends Context.Tag("@app/App")<App, { readonly run: () => Effect.Effect<string> }>() {
+        class App extends ServiceMap.Service<
+          App,
+          { readonly run: () => Effect.Effect<string> }
+        >()("@app/App") {
           static readonly layer = Layer.effect(
             App,
             Effect.gen(function* () {
@@ -612,17 +620,17 @@ describe("04-services-and-layers", () => {
       Effect.gen(function* () {
         let constructionCount = 0
 
-        class Expensive extends Context.Tag("@app/Expensive")<Expensive, { readonly id: number }>() {}
+        class Expensive extends ServiceMap.Service<Expensive, { readonly id: number }>()("@app/Expensive") {}
 
-        class ServiceA extends Context.Tag("@app/ServiceA")<
+        class ServiceA extends ServiceMap.Service<
           ServiceA,
           { readonly getValue: () => Effect.Effect<number> }
-        >() {}
+        >()("@app/ServiceA") {}
 
-        class ServiceB extends Context.Tag("@app/ServiceB")<
+        class ServiceB extends ServiceMap.Service<
           ServiceB,
           { readonly getValue: () => Effect.Effect<number> }
-        >() {}
+        >()("@app/ServiceB") {}
 
         // Shared layer as a constant
         const ExpensiveLive = Layer.effect(
@@ -674,7 +682,7 @@ describe("04-services-and-layers", () => {
       Effect.gen(function* () {
         let constructionCount = 0
 
-        class Shared extends Context.Tag("@app/Shared")<Shared, { readonly id: number }>() {}
+        class Shared extends ServiceMap.Service<Shared, { readonly id: number }>()("@app/Shared") {}
 
         const makeSharedLayer = () =>
           Layer.effect(
@@ -685,19 +693,25 @@ describe("04-services-and-layers", () => {
             }),
           )
 
-        class ServiceA extends Context.Tag("@app/ServiceA")<ServiceA, { readonly id: number }>() {}
+        class ServiceA extends ServiceMap.Service<ServiceA, { readonly id: number }>()("@app/ServiceA") {}
 
-        class ServiceB extends Context.Tag("@app/ServiceB")<ServiceB, { readonly id: number }>() {}
+        class ServiceB extends ServiceMap.Service<ServiceB, { readonly id: number }>()("@app/ServiceB") {}
 
         // Bad: inline calls create different references
         const ServiceALive = Layer.effect(
           ServiceA,
-          Effect.map(Shared, (s) => ({ id: s.id })),
+          Effect.gen(function* () {
+            const s = yield* Shared
+            return { id: s.id }
+          }),
         ).pipe(Layer.provide(makeSharedLayer())) // new instance
 
         const ServiceBLive = Layer.effect(
           ServiceB,
-          Effect.map(Shared, (s) => ({ id: s.id })),
+          Effect.gen(function* () {
+            const s = yield* Shared
+            return { id: s.id }
+          }),
         ).pipe(Layer.provide(makeSharedLayer())) // another new instance
 
         const AppLive = Layer.merge(ServiceALive, ServiceBLive)
@@ -719,13 +733,13 @@ describe("04-services-and-layers", () => {
   })
 
   describe("it.layer", () => {
-    class Counter extends Context.Tag("@app/Counter")<
+    class Counter extends ServiceMap.Service<
       Counter,
       {
         readonly get: () => Effect.Effect<number>
         readonly increment: () => Effect.Effect<void>
       }
-    >() {
+    >()("@app/Counter") {
       static readonly layer = Layer.sync(Counter, () => {
         let count = 0
         return {

@@ -1,16 +1,16 @@
 ---
 title: Services & Layers
-description: "Context.Tag and Layer patterns for dependency injection"
+description: "ServiceMap.Service and Layer patterns for dependency injection"
 order: 4
 ---
 
 # Services & Layers
 
-Effect's service pattern provides a deterministic way to organize your application through dependency injection. By defining services as `Context.Tag` classes and composing them into Layers, you create explicit dependency graphs that are type-safe, testable, and modular.
+Effect's service pattern provides a deterministic way to organize your application through dependency injection. By defining services as `ServiceMap.Service` classes and composing them into Layers, you create explicit dependency graphs that are type-safe, testable, and modular.
 
 ## What is a Service?
 
-A service in Effect is defined using `Context.Tag` as a class that declares:
+A service in Effect is defined using `ServiceMap.Service` as a class that declares:
 
 1. **A unique identifier** (e.g., `@app/Database`)
 2. **An interface** that describes the service's methods
@@ -18,22 +18,22 @@ A service in Effect is defined using `Context.Tag` as a class that declares:
 Services provide contracts without implementation. The actual behavior comes later through Layers.
 
 ```typescript
-import { Context, Effect } from "effect"
+import { Effect, ServiceMap } from "effect"
 
-class Database extends Context.Tag("@app/Database")<
+class Database extends ServiceMap.Service<
   Database,
   {
     readonly query: (sql: string) => Effect.Effect<unknown[]>
     readonly execute: (sql: string) => Effect.Effect<void>
   }
->() {}
+>()("@app/Database") {}
 
-class Logger extends Context.Tag("@app/Logger")<
+class Logger extends ServiceMap.Service<
   Logger,
   {
     readonly log: (message: string) => Effect.Effect<void>
   }
->() {}
+>()("@app/Logger") {}
 ```
 
 - **Tag identifiers must be unique**. Use `@path/to/ServiceName` prefix pattern
@@ -49,26 +49,26 @@ A Layer is an implementation of a service. Layers handle:
 3. **Resource lifecycle**: Cleanup happens automatically
 
 ```typescript
-import { HttpClient, HttpClientResponse } from "@effect/platform"
-import { Context, Effect, Layer, Schema } from "effect"
+import { HttpClient, HttpClientResponse } from "effect/unstable/http"
+import { Effect, Layer, Schema, ServiceMap } from "effect"
 
 const UserId = Schema.String.pipe(Schema.brand("UserId"))
 type UserId = typeof UserId.Type
 
-class User extends Schema.Class<User>("User")({
+class User extends Schema.Class("User")({
   id: UserId,
   name: Schema.String,
   email: Schema.String,
 }) {}
 
-class UserNotFoundError extends Schema.TaggedError<UserNotFoundError>()(
+class UserNotFoundError extends Schema.TaggedErrorClass("UserNotFoundError")(
   "UserNotFoundError",
   {
     id: UserId,
   }
 ) {}
 
-class GenericUsersError extends Schema.TaggedError<GenericUsersError>()(
+class GenericUsersError extends Schema.TaggedErrorClass("GenericUsersError")(
   "GenericUsersError",
   {
     id: UserId,
@@ -76,23 +76,23 @@ class GenericUsersError extends Schema.TaggedError<GenericUsersError>()(
   }
 ) {}
 
-const UsersError = Schema.Union(UserNotFoundError, GenericUsersError)
+const UsersError = Schema.Union([UserNotFoundError, GenericUsersError])
 type UsersError = typeof UsersError.Type
 
-class Analytics extends Context.Tag("@app/Analytics")<
+class Analytics extends ServiceMap.Service<
   Analytics,
   {
     readonly track: (event: string, data: Record<string, unknown>) => Effect.Effect<void>
   }
->() {}
+>()("@app/Analytics") {}
 
-class Users extends Context.Tag("@app/Users")<
+class Users extends ServiceMap.Service<
   Users,
   {
     readonly findById: (id: UserId) => Effect.Effect<User, UsersError>
     readonly all: () => Effect.Effect<readonly User[]>
   }
->() {
+>()("@app/Users") {
   static readonly layer = Layer.effect(
     Users,
     Effect.gen(function* () {
@@ -109,8 +109,8 @@ class Users extends Context.Tag("@app/Users")<
         },
         Effect.catchTag("ResponseError", (error) =>
           error.response.status === 404
-            ? UserNotFoundError.make({ id })
-            : GenericUsersError.make({ id, error }),
+            ? new UserNotFoundError({ id })
+            : new GenericUsersError({ id, error }),
         ),
       )
 
@@ -121,7 +121,7 @@ class Users extends Context.Tag("@app/Users")<
       })
 
       // 3. return the service
-      return Users.of({ findById, all })
+      return { findById, all }
     })
   )
 }
@@ -134,7 +134,7 @@ class Users extends Context.Tag("@app/Users")<
 Start by sketching leaf service tags (without implementations). This lets you write real TypeScript for higher-level orchestration services that type-checks even though the leaf services aren't runnable yet.
 
 ```typescript
-import { Clock, Context, Effect, Layer, Schema } from "effect"
+import { Clock, Effect, Layer, Schema, ServiceMap } from "effect"
 
 // Branded types for IDs
 const RegistrationId = Schema.String.pipe(Schema.brand("RegistrationId"))
@@ -150,13 +150,13 @@ const TicketId = Schema.String.pipe(Schema.brand("TicketId"))
 type TicketId = typeof TicketId.Type
 
 // Domain models
-class User extends Schema.Class<User>("User")({
+class User extends Schema.Class("User")({
   id: UserId,
   name: Schema.String,
   email: Schema.String,
 }) {}
 
-class Registration extends Schema.Class<Registration>("Registration")({
+class Registration extends Schema.Class("Registration")({
   id: RegistrationId,
   eventId: EventId,
   userId: UserId,
@@ -164,42 +164,42 @@ class Registration extends Schema.Class<Registration>("Registration")({
   registeredAt: Schema.Date,
 }) {}
 
-class Ticket extends Schema.Class<Ticket>("Ticket")({
+class Ticket extends Schema.Class("Ticket")({
   id: TicketId,
   eventId: EventId,
   code: Schema.String,
 }) {}
 
 // Leaf services: contracts only
-class Users extends Context.Tag("@app/Users")<
+class Users extends ServiceMap.Service<
   Users,
   {
     readonly findById: (id: UserId) => Effect.Effect<User>
   }
->() {}
+>()("@app/Users") {}
 
-class Tickets extends Context.Tag("@app/Tickets")<
+class Tickets extends ServiceMap.Service<
   Tickets,
   {
     readonly issue: (eventId: EventId, userId: UserId) => Effect.Effect<Ticket>
     readonly validate: (ticketId: TicketId) => Effect.Effect<boolean>
   }
->() {}
+>()("@app/Tickets") {}
 
-class Emails extends Context.Tag("@app/Emails")<
+class Emails extends ServiceMap.Service<
   Emails,
   {
     readonly send: (to: string, subject: string, body: string) => Effect.Effect<void>
   }
->() {}
+>()("@app/Emails") {}
 
 // Higher-level service: orchestrates leaf services
-class Events extends Context.Tag("@app/Events")<
+class Events extends ServiceMap.Service<
   Events,
   {
     readonly register: (eventId: EventId, userId: UserId) => Effect.Effect<Registration>
   }
->() {
+>()("@app/Events") {
   static readonly layer = Layer.effect(
     Events,
     Effect.gen(function* () {
@@ -213,8 +213,8 @@ class Events extends Context.Tag("@app/Events")<
           const ticket = yield* tickets.issue(eventId, userId)
           const now = yield* Clock.currentTimeMillis
 
-          const registration = Registration.make({
-            id: RegistrationId.make(crypto.randomUUID()),
+          const registration = new Registration({
+            id: RegistrationId.makeUnsafe(crypto.randomUUID()),
             eventId,
             userId,
             ticketId: ticket.id,
@@ -231,7 +231,7 @@ class Events extends Context.Tag("@app/Events")<
         }
       )
 
-      return Events.of({ register })
+      return { register }
     })
   )
 }
@@ -253,15 +253,15 @@ See [Testing with Vitest](./08-testing.md#worked-example-testing-a-service) for 
 When designing with services first, create lightweight test implementations. Use `Effect.sync` or `Effect.succeed` when your test doesn't need async operations or effects.
 
 ```typescript
-import { Console, Context, Effect, Layer } from "effect"
+import { Console, Effect, Layer, ServiceMap } from "effect"
 
-class Database extends Context.Tag("@app/Database")<
+class Database extends ServiceMap.Service<
   Database,
   {
     readonly query: (sql: string) => Effect.Effect<unknown[]>
     readonly execute: (sql: string) => Effect.Effect<void>
   }
->() {
+>()("@app/Database") {
   static readonly testLayer = Layer.sync(Database, () => {
     let records: Record<string, unknown> = {
       "user-1": { id: "user-1", name: "Alice" },
@@ -271,24 +271,24 @@ class Database extends Context.Tag("@app/Database")<
     const query = (sql: string) => Effect.succeed(Object.values(records))
     const execute = (sql: string) => Console.log(`Test execute: ${sql}`)
 
-    return Database.of({ query, execute })
+    return { query, execute }
   })
 }
 
-class Cache extends Context.Tag("@app/Cache")<
+class Cache extends ServiceMap.Service<
   Cache,
   {
     readonly get: (key: string) => Effect.Effect<string | null>
     readonly set: (key: string, value: string) => Effect.Effect<void>
   }
->() {
+>()("@app/Cache") {
   static readonly testLayer = Layer.sync(Cache, () => {
     const store = new Map<string, string>()
 
     const get = (key: string) => Effect.succeed(store.get(key) ?? null)
     const set = (key: string, value: string) => Effect.sync(() => void store.set(key, value))
 
-    return Cache.of({ get, set })
+    return { get, set }
   })
 }
 ```
@@ -298,12 +298,12 @@ class Cache extends Context.Tag("@app/Cache")<
 Use `Effect.provide` once at the top of your application to supply all dependencies. Avoid scattering `provide` calls throughout your codebase.
 
 ```typescript
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer, ServiceMap } from "effect"
 // hide-start
-class Config extends Context.Tag("@app/Config")<Config, { readonly apiKey: string }>() {}
-class Logger extends Context.Tag("@app/Logger")<Logger, { readonly info: (msg: string) => Effect.Effect<void> }>() {}
-class Database extends Context.Tag("@app/Database")<Database, { readonly query: () => Effect.Effect<void> }>() {}
-class UserService extends Context.Tag("@app/UserService")<UserService, { readonly getUser: () => Effect.Effect<void> }>() {}
+class Config extends ServiceMap.Service<Config, { readonly apiKey: string }>()("@app/Config") {}
+class Logger extends ServiceMap.Service<Logger, { readonly info: (msg: string) => Effect.Effect<void> }>()("@app/Logger") {}
+class Database extends ServiceMap.Service<Database, { readonly query: () => Effect.Effect<void> }>()("@app/Database") {}
+class UserService extends ServiceMap.Service<UserService, { readonly getUser: () => Effect.Effect<void> }>()("@app/UserService") {}
 declare const configLayer: Layer.Layer<Config>
 declare const loggerLayer: Layer.Layer<Logger>
 declare const databaseLayer: Layer.Layer<Database>
@@ -347,13 +347,13 @@ This matters especially for resource-intensive layers like database connection p
 ```typescript
 import { Layer } from "effect"
 // hide-start
-import { Context, Effect } from "effect"
-class SqlClient extends Context.Tag("@app/SqlClient")<SqlClient, { readonly query: (sql: string) => Effect.Effect<unknown[]> }>() {}
+import { Effect, ServiceMap } from "effect"
+class SqlClient extends ServiceMap.Service<SqlClient, { readonly query: (sql: string) => Effect.Effect<unknown[]> }>()("@app/SqlClient") {}
 class Postgres { static layer(_: { readonly url: string; readonly poolSize: number }): Layer.Layer<SqlClient> { return Layer.succeed(SqlClient, { query: () => Effect.succeed([]) }) } }
-class UserRepo extends Context.Tag("@app/UserRepo")<UserRepo, {}>() {
+class UserRepo extends ServiceMap.Service<UserRepo, {}>()("@app/UserRepo") {
   static readonly layer: Layer.Layer<UserRepo, never, SqlClient> = Layer.succeed(UserRepo, {})
 }
-class OrderRepo extends Context.Tag("@app/OrderRepo")<OrderRepo, {}>() {
+class OrderRepo extends ServiceMap.Service<OrderRepo, {}>()("@app/OrderRepo") {
   static readonly layer: Layer.Layer<OrderRepo, never, SqlClient> = Layer.succeed(OrderRepo, {})
 }
 // hide-end
@@ -375,13 +375,13 @@ const badAppLayer = Layer.merge(
 ```typescript
 import { Layer } from "effect"
 // hide-start
-import { Context, Effect } from "effect"
-class SqlClient extends Context.Tag("@app/SqlClient")<SqlClient, { readonly query: (sql: string) => Effect.Effect<unknown[]> }>() {}
+import { Effect, ServiceMap } from "effect"
+class SqlClient extends ServiceMap.Service<SqlClient, { readonly query: (sql: string) => Effect.Effect<unknown[]> }>()("@app/SqlClient") {}
 class Postgres { static layer(_: { readonly url: string; readonly poolSize: number }): Layer.Layer<SqlClient> { return Layer.succeed(SqlClient, { query: () => Effect.succeed([]) }) } }
-class UserRepo extends Context.Tag("@app/UserRepo")<UserRepo, {}>() {
+class UserRepo extends ServiceMap.Service<UserRepo, {}>()("@app/UserRepo") {
   static readonly layer: Layer.Layer<UserRepo, never, SqlClient> = Layer.succeed(UserRepo, {})
 }
-class OrderRepo extends Context.Tag("@app/OrderRepo")<OrderRepo, {}>() {
+class OrderRepo extends ServiceMap.Service<OrderRepo, {}>()("@app/OrderRepo") {
   static readonly layer: Layer.Layer<OrderRepo, never, SqlClient> = Layer.succeed(OrderRepo, {})
 }
 // hide-end
@@ -402,7 +402,7 @@ const goodAppLayer = Layer.merge(
 
 Effect also provides [`Effect.Service`](https://effect.website/blog/releases/effect/39/#effectservice), which bundles a Tag and default Layer together. It's useful when you have an obvious default implementation.
 
-We focus on `Context.Tag` here because it supports service-driven development: sketching interfaces before implementations. A future Effect version aims to combine both approaches.
+We focus on `ServiceMap.Service` here because it supports service-driven development: sketching interfaces before implementations. A future Effect version aims to combine both approaches.
 
 ## Sharing Layers Between Tests
 
@@ -414,12 +414,12 @@ Per-test layering (preferred):
 
 ```typescript
 import { expect, it } from "@effect/vitest"
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer, ServiceMap } from "effect"
 
-class Counter extends Context.Tag("@app/Counter")<
+class Counter extends ServiceMap.Service<
   Counter,
   { readonly get: () => Effect.Effect<number>; readonly increment: () => Effect.Effect<void> }
->() {
+>()("@app/Counter") {
   static readonly layer = Layer.sync(Counter, () => {
     let count = 0
     return {
@@ -450,15 +450,15 @@ Suite-shared layering (only when you know you need it):
 
 ```typescript
 import { expect, it } from "@effect/vitest"
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer, ServiceMap } from "effect"
 
-class Counter extends Context.Tag("@app/Counter")<
+class Counter extends ServiceMap.Service<
   Counter,
   {
     readonly get: () => Effect.Effect<number>
     readonly increment: () => Effect.Effect<void>
   }
->() {
+>()("@app/Counter") {
   static readonly layer = Layer.sync(Counter, () => {
     let count = 0
     return {

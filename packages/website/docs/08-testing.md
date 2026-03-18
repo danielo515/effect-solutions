@@ -11,7 +11,7 @@ order: 8
 ## Why @effect/vitest?
 
 - **Native Effect support**: Run Effect programs directly in tests with `it.effect()`
-- **Automatic cleanup**: `it.scoped()` manages resource lifecycles
+- **Automatic cleanup**: Scoped resources are managed automatically
 - **Test services**: Use TestClock, TestRandom for deterministic tests
 - **Better errors**: Full fiber dumps with causes, spans, and logs
 - **Layer support**: Provide dependencies to tests with `Effect.provide()`
@@ -19,7 +19,7 @@ order: 8
 ## Install
 
 ```bash
-bun add -D vitest @effect/vitest
+bun add -D vitest @effect/vitest@beta
 ```
 
 ## Setup
@@ -92,16 +92,16 @@ it.effect("processes data", () =>
 )
 ```
 
-### it.scoped()
+### it.effect() with scoped resources
 
-For tests using scoped resources. The scope closes automatically when the test ends, triggering cleanup finalizers:
+Scoping is automatic in v4. The scope closes automatically when the test ends, triggering cleanup finalizers:
 
 ```typescript
-import { FileSystem } from "@effect/platform"
+import { FileSystem } from "effect"
 import { NodeFileSystem } from "@effect/platform-node"
 import { Effect } from "effect"
 
-it.scoped("temp directory is cleaned up", () =>
+it.effect("temp directory is cleaned up", () =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem
 
@@ -147,12 +147,13 @@ it.live("real clock", () =>
 `it.effect` automatically provides TestContext with TestClock. Use `TestClock.adjust` to simulate time:
 
 ```typescript
-import { Effect, Fiber, TestClock } from "effect"
+import { Effect, Fiber } from "effect"
+import { TestClock } from "effect/testing"
 
 it.effect("time-based test", () =>
   Effect.gen(function* () {
     const fiber = yield* Effect.delay(Effect.succeed("done"), "10 seconds").pipe(
-      Effect.fork
+      Effect.forkChild
     )
     yield* TestClock.adjust("10 seconds")
     const result = yield* Fiber.join(fiber)
@@ -166,12 +167,12 @@ it.effect("time-based test", () =>
 Use `Effect.provide()` inline for test-specific layers:
 
 ```typescript
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer, ServiceMap } from "effect"
 
-class Database extends Context.Tag("Database")<
+class Database extends ServiceMap.Service<
   Database,
   { query: (sql: string) => Effect.Effect<string[]> }
->() {}
+>()("Database") {}
 
 const testDatabase = Layer.succeed(Database, {
   query: (_sql) => Effect.succeed(["mock", "data"])
@@ -254,7 +255,7 @@ Here's a complete example testing the `Events` service from the [Services & Laye
 First, define domain types and services with test layers built-in:
 
 ```typescript
-import { Clock, Context, Effect, Layer, Schema } from "effect"
+import { Clock, Effect, Layer, Option, Schema, ServiceMap } from "effect"
 import { describe, expect, it } from "@effect/vitest"
 
 // Domain types
@@ -270,13 +271,13 @@ type UserId = typeof UserId.Type
 const TicketId = Schema.String.pipe(Schema.brand("TicketId"))
 type TicketId = typeof TicketId.Type
 
-class User extends Schema.Class<User>("User")({
+class User extends Schema.Class("User")({
   id: UserId,
   name: Schema.String,
   email: Schema.String,
 }) {}
 
-class Registration extends Schema.Class<Registration>("Registration")({
+class Registration extends Schema.Class("Registration")({
   id: RegistrationId,
   eventId: EventId,
   userId: UserId,
@@ -284,30 +285,30 @@ class Registration extends Schema.Class<Registration>("Registration")({
   registeredAt: Schema.Date,
 }) {}
 
-class Ticket extends Schema.Class<Ticket>("Ticket")({
+class Ticket extends Schema.Class("Ticket")({
   id: TicketId,
   eventId: EventId,
   code: Schema.String,
 }) {}
 
-class Email extends Schema.Class<Email>("Email")({
+class Email extends Schema.Class("Email")({
   to: Schema.String,
   subject: Schema.String,
   body: Schema.String,
 }) {}
 
-class UserNotFound extends Schema.TaggedError<UserNotFound>()("UserNotFound", {
+class UserNotFound extends Schema.TaggedErrorClass("UserNotFound")("UserNotFound", {
   id: UserId,
 }) {}
 
 // Users service with test layer that has create + findById
-class Users extends Context.Tag("@app/Users")<
+class Users extends ServiceMap.Service<
   Users,
   {
     readonly create: (user: User) => Effect.Effect<void>
     readonly findById: (id: UserId) => Effect.Effect<User, UserNotFound>
   }
->() {
+>()("@app/Users") {
   // Mutable state is fine in tests - JS is single-threaded
   static readonly testLayer = Layer.sync(Users, () => {
     const store = new Map<UserId, User>()
@@ -315,43 +316,44 @@ class Users extends Context.Tag("@app/Users")<
     const create = (user: User) => Effect.sync(() => void store.set(user.id, user))
 
     const findById = (id: UserId) =>
-      Effect.fromNullable(store.get(id)).pipe(
-        Effect.orElseFail(() => UserNotFound.make({ id }))
+      Option.fromNullishOr(store.get(id)).pipe(
+        Effect.fromOption,
+        Effect.catch(() => Effect.fail(new UserNotFound({ id })))
       )
 
-    return Users.of({ create, findById })
+    return { create, findById }
   })
 }
 
 // Tickets service with test layer
-class Tickets extends Context.Tag("@app/Tickets")<
+class Tickets extends ServiceMap.Service<
   Tickets,
   { readonly issue: (eventId: EventId, userId: UserId) => Effect.Effect<Ticket> }
->() {
+>()("@app/Tickets") {
   static readonly testLayer = Layer.sync(Tickets, () => {
     let counter = 0
 
     const issue = (eventId: EventId, _userId: UserId) =>
       Effect.sync(() =>
-        Ticket.make({
-          id: TicketId.make(`ticket-${counter++}`),
+        new Ticket({
+          id: TicketId.makeUnsafe(`ticket-${counter++}`),
           eventId,
           code: `CODE-${counter}`,
         })
       )
 
-    return Tickets.of({ issue })
+    return { issue }
   })
 }
 
 // Emails service with test layer that tracks sent emails
-class Emails extends Context.Tag("@app/Emails")<
+class Emails extends ServiceMap.Service<
   Emails,
   {
     readonly send: (email: Email) => Effect.Effect<void>
     readonly sent: Effect.Effect<ReadonlyArray<Email>>
   }
->() {
+>()("@app/Emails") {
   static readonly testLayer = Layer.sync(Emails, () => {
     const emails: Array<Email> = []
 
@@ -359,7 +361,7 @@ class Emails extends Context.Tag("@app/Emails")<
 
     const sent = Effect.sync(() => emails)
 
-    return Emails.of({ send, sent })
+    return { send, sent }
   })
 }
 ```
@@ -367,10 +369,10 @@ class Emails extends Context.Tag("@app/Emails")<
 The Events service orchestrates the leaf services:
 
 ```typescript
-class Events extends Context.Tag("@app/Events")<
+class Events extends ServiceMap.Service<
   Events,
   { readonly register: (eventId: EventId, userId: UserId) => Effect.Effect<Registration, UserNotFound> }
->() {
+>()("@app/Events") {
   static readonly layer = Layer.effect(
     Events,
     Effect.gen(function* () {
@@ -384,8 +386,8 @@ class Events extends Context.Tag("@app/Events")<
           const ticket = yield* tickets.issue(eventId, userId)
           const now = yield* Clock.currentTimeMillis
 
-          const registration = Registration.make({
-            id: RegistrationId.make(crypto.randomUUID()),
+          const registration = new Registration({
+            id: RegistrationId.makeUnsafe(crypto.randomUUID()),
             eventId,
             userId,
             ticketId: ticket.id,
@@ -393,7 +395,7 @@ class Events extends Context.Tag("@app/Events")<
           })
 
           yield* emails.send(
-            Email.make({
+            new Email({
               to: user.email,
               subject: "Event Registration Confirmed",
               body: `Your ticket code: ${ticket.code}`,
@@ -404,7 +406,7 @@ class Events extends Context.Tag("@app/Events")<
         }
       )
 
-      return Events.of({ register })
+      return { register }
     })
   )
 }
@@ -427,15 +429,15 @@ describe("Events.register", () => {
       const events = yield* Events
 
       // Arrange: create a user
-      const user = User.make({
-        id: UserId.make("user-123"),
+      const user = new User({
+        id: UserId.makeUnsafe("user-123"),
         name: "Alice",
         email: "alice@example.com",
       })
       yield* users.create(user)
 
       // Act
-      const eventId = EventId.make("event-789")
+      const eventId = EventId.makeUnsafe("event-789")
       const registration = yield* events.register(eventId, user.id)
 
       // Assert
@@ -451,15 +453,15 @@ describe("Events.register", () => {
       const emails = yield* Emails
 
       // Arrange
-      const user = User.make({
-        id: UserId.make("user-456"),
+      const user = new User({
+        id: UserId.makeUnsafe("user-456"),
         name: "Bob",
         email: "bob@example.com",
       })
       yield* users.create(user)
 
       // Act
-      yield* events.register(EventId.make("event-789"), user.id)
+      yield* events.register(EventId.makeUnsafe("event-789"), user.id)
 
       // Assert: check sent emails
       const sentEmails = yield* emails.sent

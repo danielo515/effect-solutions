@@ -1,9 +1,9 @@
 import { describe, it } from "@effect/vitest"
 import { assertTrue, strictEqual } from "@effect/vitest/utils"
-import { Effect, Either, Layer, pipe, Schema } from "effect"
+import { Effect, Layer, pipe, Result, Schema, ServiceMap } from "effect"
 
 describe("14-use-pattern", () => {
-  class FileSystemError extends Schema.TaggedError<FileSystemError>()("FileSystemError", {
+  class FileSystemError extends Schema.TaggedErrorClass("FileSystemError")("FileSystemError", {
     cause: Schema.optional(Schema.Unknown),
   }) {}
 
@@ -32,32 +32,37 @@ describe("14-use-pattern", () => {
     } satisfies MockFs
   }
 
-  class FileSystem extends Effect.Service<FileSystem>()("FileSystem", {
-    effect: Effect.gen(function* () {
-      const mockFs = createMockFs()
-
-      const use = <A>(fn: (fs: MockFs, signal: AbortSignal) => Promise<A>): Effect.Effect<A, FileSystemError> =>
-        Effect.tryPromise({
-          try: (signal) => fn(mockFs, signal),
-          catch: (cause) => new FileSystemError({ cause }),
-        })
-
-      return { use } as const
-    }),
-  }) {
-    static readonly Test = Layer.succeed(
+  class FileSystem extends ServiceMap.Service<
+    FileSystem,
+    {
+      readonly use: <A>(fn: (fs: MockFs, signal: AbortSignal) => Promise<A>) => Effect.Effect<A, FileSystemError>
+    }
+  >()("FileSystem") {
+    static readonly Default = Layer.effect(
       FileSystem,
-      FileSystem.make({
-        use: (fn) => {
-          const mockFs = createMockFs()
+      Effect.gen(function* () {
+        const mockFs = createMockFs()
 
-          return Effect.tryPromise({
+        const use = <A>(fn: (fs: MockFs, signal: AbortSignal) => Promise<A>): Effect.Effect<A, FileSystemError> =>
+          Effect.tryPromise({
             try: (signal) => fn(mockFs, signal),
             catch: (cause) => new FileSystemError({ cause }),
           })
-        },
+
+        return { use } as const
       }),
     )
+
+    static readonly Test = Layer.succeed(FileSystem, {
+      use: (fn) => {
+        const mockFs = createMockFs()
+
+        return Effect.tryPromise({
+          try: (signal) => fn(mockFs, signal),
+          catch: (cause) => new FileSystemError({ cause }),
+        })
+      },
+    })
   }
 
   describe("use pattern", () => {
@@ -101,13 +106,13 @@ describe("14-use-pattern", () => {
 
           const result = yield* pipe(
             fileSystem.use((fs) => fs.readFile("nonexistent.txt")),
-            Effect.either,
+            Effect.result,
           )
 
-          assertTrue(Either.isLeft(result))
+          assertTrue(Result.isFailure(result))
 
-          if (Either.isLeft(result)) {
-            strictEqual(result.left._tag, "FileSystemError")
+          if (Result.isFailure(result)) {
+            strictEqual(result.failure._tag, "FileSystemError")
           }
         }),
         Effect.provide(FileSystem.Default),

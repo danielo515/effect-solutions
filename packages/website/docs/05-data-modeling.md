@@ -36,7 +36,7 @@ import { Schema } from "effect"
 const UserId = Schema.String.pipe(Schema.brand("UserId"))
 type UserId = typeof UserId.Type
 
-export class User extends Schema.Class<User>("User")({
+export class User extends Schema.Class("User")({
   id: UserId,
   name: Schema.String,
   email: Schema.String,
@@ -49,8 +49,8 @@ export class User extends Schema.Class<User>("User")({
 }
 
 // Usage
-const user = User.make({
-  id: UserId.make("user-123"),
+const user = new User({
+  id: UserId.makeUnsafe("user-123"),
   name: "Alice",
   email: "alice@example.com",
   createdAt: new Date(),
@@ -66,7 +66,7 @@ Use `Schema.Literal` for simple string or number alternatives:
 ```typescript
 import { Schema } from "effect"
 
-const Status = Schema.Literal("pending", "active", "completed")
+const Status = Schema.Literals(["pending", "active", "completed"])
 type Status = typeof Status.Type // "pending" | "active" | "completed"
 ```
 
@@ -76,21 +76,21 @@ For structured variants with fields, combine `Schema.TaggedClass` with `Schema.U
 import { Match, Schema } from "effect"
 
 // Define variants with a tag field
-export class Success extends Schema.TaggedClass<Success>()("Success", {
+export class Success extends Schema.TaggedClass("Success")("Success", {
   value: Schema.Number,
 }) {}
 
-export class Failure extends Schema.TaggedClass<Failure>()("Failure", {
+export class Failure extends Schema.TaggedClass("Failure")("Failure", {
   error: Schema.String,
 }) {}
 
 // Create the union
-export const Result = Schema.Union(Success, Failure)
+export const Result = Schema.Union([Success, Failure])
 export type Result = typeof Result.Type
 
 // Pattern match with Match.valueTags
-const success = Success.make({ value: 42 })
-const failure = Failure.make({ error: "oops" })
+const success = new Success({ value: 42 })
+const failure = new Failure({ error: "oops" })
 
 const renderResult = (result: Result) =>
   Match.valueTags(result, {
@@ -126,13 +126,13 @@ export type PostId = typeof PostId.Type
 export const Email = Schema.String.pipe(Schema.brand("Email"))
 export type Email = typeof Email.Type
 
-export const Port = Schema.Int.pipe(Schema.between(1, 65535), Schema.brand("Port"))
+export const Port = Schema.Int.pipe(Schema.check(Schema.isBetween({minimum: 1, maximum: 65535})), Schema.brand("Port"))
 export type Port = typeof Port.Type
 
 // Usage - impossible to mix types
-const userId = UserId.make("user-123")
-const postId = PostId.make("post-456")
-const email = Email.make("alice@example.com")
+const userId = UserId.makeUnsafe("user-123")
+const postId = PostId.makeUnsafe("post-456")
+const email = Email.makeUnsafe("alice@example.com")
 
 function getUser(id: UserId) { return id }
 function sendEmail(to: Email) { return to }
@@ -149,39 +149,39 @@ sendEmail(email)
 
 ## JSON Encoding & Decoding
 
-Use `Schema.parseJson` to parse JSON strings and validate them with your schema in one step. This combines `JSON.parse` + `Schema.decodeUnknown` for decoding, and `JSON.stringify` + `Schema.encode` for encoding:
+Use `Schema.fromJsonString` to parse JSON strings and validate them with your schema in one step. This combines `JSON.parse` + schema decoding in one step, and `JSON.stringify` + schema encoding for the reverse:
 
 ```typescript
 import { Effect, Schema } from "effect"
 
-const Row = Schema.Literal("A", "B", "C", "D", "E", "F", "G", "H")
-const Column = Schema.Literal("1", "2", "3", "4", "5", "6", "7", "8")
+const Row = Schema.Literals(["A", "B", "C", "D", "E", "F", "G", "H"])
+const Column = Schema.Literals(["1", "2", "3", "4", "5", "6", "7", "8"])
 
-class Position extends Schema.Class<Position>("Position")({
+class Position extends Schema.Class("Position")({
   row: Row,
   column: Column,
 }) {}
 
-class Move extends Schema.Class<Move>("Move")({
+class Move extends Schema.Class("Move")({
   from: Position,
   to: Position,
 }) {}
 
-// parseJson combines JSON.parse + schema decoding
+// fromJsonString combines JSON.parse + schema decoding
 // MoveFromJson is a schema that takes a JSON string and returns a Move
-const MoveFromJson = Schema.parseJson(Move)
+const MoveFromJson = Schema.fromJsonString(Move)
 
 const program = Effect.gen(function* () {
   // Parse and validate JSON string in one step
   // Use MoveFromJson (not Move) to decode from JSON string
   const jsonString = '{"from":{"row":"A","column":"1"},"to":{"row":"B","column":"2"}}'
-  const move = yield* Schema.decodeUnknown(MoveFromJson)(jsonString)
+  const move = yield* Schema.decodeUnknownEffect(MoveFromJson)(jsonString)
 
   yield* Effect.log("Decoded move", move)
 
   // Encode to JSON string in one step (typed as string)
   // Use MoveFromJson (not Move) to encode to JSON string
-  const json = yield* Schema.encode(MoveFromJson)(move)
+  const json = yield* Schema.encodeEffect(MoveFromJson)(move)
   return json
 })
 ```

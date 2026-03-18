@@ -24,29 +24,34 @@ For libraries with only a few methods, consider wrapping each method individuall
 ## The pattern
 
 ```typescript
+import { Effect, Layer, Schema, ServiceMap } from "effect"
 import * as fs_ from "node:fs/promises"
 
-import { Effect, Schema } from "effect"
-import * as fs_ from "node:fs/promises"
-
-class FileSystemError extends Schema.TaggedError<FileSystemError>()(
+class FileSystemError extends Schema.TaggedErrorClass("FileSystemError")(
   "FileSystemError",
   { cause: Schema.optional(Schema.Unknown) }
 ) {}
 
-class FileSystem extends Effect.Service<FileSystem>()("FileSystem", {
-  effect: Effect.gen(function* () {
-    const use = <A>(
-      fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
-    ): Effect.Effect<A, FileSystemError> =>
-      Effect.tryPromise({
-        try: (signal) => fn(fs, signal),
-        catch: (cause) => new FileSystemError({ cause }),
-      })
+class FileSystem extends ServiceMap.Service<FileSystem, {
+  readonly use: <A>(
+    fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
+  ) => Effect.Effect<A, FileSystemError>
+}>()("FileSystem") {
+  static readonly Default = Layer.effect(
+    FileSystem,
+    Effect.gen(function* () {
+      const use = <A>(
+        fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
+      ): Effect.Effect<A, FileSystemError> =>
+        Effect.tryPromise({
+          try: (signal) => fn(fs_, signal),
+          catch: (cause) => new FileSystemError({ cause }),
+        })
 
-    return { use } as const
-  }),
-}) {}
+      return { use } as const
+    }),
+  )
+}
 ```
 
 The service exposes a single `use` method that:
@@ -60,22 +65,23 @@ The service exposes a single `use` method that:
 ```typescript
 import { Effect, pipe } from "effect"
 // hide-start
+import { Layer, Schema, ServiceMap } from "effect"
 import * as fs_ from "node:fs/promises"
-import { Schema } from "effect"
-import * as fs_ from "node:fs/promises"
-class FileSystemError extends Schema.TaggedError<FileSystemError>()(
+class FileSystemError extends Schema.TaggedErrorClass("FileSystemError")(
   "FileSystemError",
   { cause: Schema.optional(Schema.Unknown) }
 ) {}
-class FileSystem extends Effect.Service<FileSystem>()("FileSystem", {
-  effect: Effect.succeed({
+class FileSystem extends ServiceMap.Service<FileSystem, {
+  readonly use: <A>(fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>) => Effect.Effect<A, FileSystemError>
+}>()("FileSystem") {
+  static readonly Default = Layer.effect(FileSystem, Effect.succeed({
     use: <A>(fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>) =>
       Effect.tryPromise({
-        try: (signal) => fn(fs, signal),
+        try: (signal) => fn(fs_, signal),
         catch: (cause) => new FileSystemError({ cause }),
       }),
-  }),
-}) {}
+  }))
+}
 // hide-end
 
 const program = Effect.gen(function* () {
@@ -114,39 +120,45 @@ When the Effect is interrupted, the signal is aborted, allowing operations that 
 For frequently used operations, add typed methods alongside `use`:
 
 ```typescript
+import { Effect, Layer, Schema, ServiceMap } from "effect"
 import * as fs_ from "node:fs/promises"
 
-import { Effect, Schema } from "effect"
-import * as fs_ from "node:fs/promises"
-
-class FileSystemError extends Schema.TaggedError<FileSystemError>()(
+class FileSystemError extends Schema.TaggedErrorClass("FileSystemError")(
   "FileSystemError",
   { cause: Schema.optional(Schema.Unknown) }
 ) {}
 
-class FileSystem extends Effect.Service<FileSystem>()("FileSystem", {
-  effect: Effect.gen(function* () {
-    const use = <A>(
-      fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
-    ): Effect.Effect<A, FileSystemError> =>
-      Effect.tryPromise({
-        try: (signal) => fn(fs, signal),
-        catch: (cause) => new FileSystemError({ cause }),
-      })
+class FileSystem extends ServiceMap.Service<FileSystem, {
+  readonly use: <A>(fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>) => Effect.Effect<A, FileSystemError>
+  readonly readFile: (path: string) => Effect.Effect<string, FileSystemError>
+  readonly writeFile: (path: string, content: string) => Effect.Effect<void, FileSystemError>
+  readonly readdir: (path: string) => Effect.Effect<string[], FileSystemError>
+}>()("FileSystem") {
+  static readonly Default = Layer.effect(
+    FileSystem,
+    Effect.gen(function* () {
+      const use = <A>(
+        fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
+      ): Effect.Effect<A, FileSystemError> =>
+        Effect.tryPromise({
+          try: (signal) => fn(fs_, signal),
+          catch: (cause) => new FileSystemError({ cause }),
+        })
 
-    // Convenience methods for common operations
-    const readFile = (path: string) =>
-      use((fs, signal) => fs.readFile(path, { encoding: "utf-8", signal }))
+      // Convenience methods for common operations
+      const readFile = (path: string) =>
+        use((fs, signal) => fs.readFile(path, { encoding: "utf-8", signal }))
 
-    const writeFile = (path: string, content: string) =>
-      use((fs, signal) => fs.writeFile(path, content, { signal }))
+      const writeFile = (path: string, content: string) =>
+        use((fs, signal) => fs.writeFile(path, content, { signal }))
 
-    const readdir = (path: string) =>
-      use((fs) => fs.readdir(path))
+      const readdir = (path: string) =>
+        use((fs) => fs.readdir(path))
 
-    return { use, readFile, writeFile, readdir } as const
-  }),
-}) {}
+      return { use, readFile, writeFile, readdir } as const
+    }),
+  )
+}
 ```
 
 This gives consumers a choice: use the typed convenience methods for common operations, or use `use` for anything else.
@@ -165,30 +177,34 @@ You could expose the underlying client directly, but the callback approach provi
 If you prefer direct access, you can expose both:
 
 ```typescript
+import { Effect, Layer, Schema, ServiceMap } from "effect"
 import * as fs_ from "node:fs/promises"
 
-import { Effect, Schema } from "effect"
-import * as fs_ from "node:fs/promises"
-
-class FileSystemError extends Schema.TaggedError<FileSystemError>()(
+class FileSystemError extends Schema.TaggedErrorClass("FileSystemError")(
   "FileSystemError",
   { cause: Schema.optional(Schema.Unknown) }
 ) {}
 
-class FileSystem extends Effect.Service<FileSystem>()("FileSystem", {
-  effect: Effect.gen(function* () {
-    const use = <A>(
-      fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
-    ): Effect.Effect<A, FileSystemError> =>
-      Effect.tryPromise({
-        try: (signal) => fn(fs, signal),
-        catch: (cause) => new FileSystemError({ cause }),
-      })
+class FileSystem extends ServiceMap.Service<FileSystem, {
+  readonly client: typeof fs_
+  readonly use: <A>(fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>) => Effect.Effect<A, FileSystemError>
+}>()("FileSystem") {
+  static readonly Default = Layer.effect(
+    FileSystem,
+    Effect.gen(function* () {
+      const use = <A>(
+        fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
+      ): Effect.Effect<A, FileSystemError> =>
+        Effect.tryPromise({
+          try: (signal) => fn(fs_, signal),
+          catch: (cause) => new FileSystemError({ cause }),
+        })
 
-    // Expose both for flexibility
-    return { client: fs, use } as const
-  }),
-}) {}
+      // Expose both for flexibility
+      return { client: fs_, use } as const
+    }),
+  )
+}
 ```
 
 The trade-off is direct client access loses automatic error wrapping and interruption support, so callers must handle these manually.
@@ -198,28 +214,32 @@ The trade-off is direct client access loses automatic error wrapping and interru
 Create a test layer that uses in-memory storage:
 
 ```typescript
+import { Effect, Layer, Schema, ServiceMap } from "effect"
 import * as fs_ from "node:fs/promises"
 
-import { Effect, Layer, Schema } from "effect"
-
-class FileSystemError extends Schema.TaggedError<FileSystemError>()(
+class FileSystemError extends Schema.TaggedErrorClass("FileSystemError")(
   "FileSystemError",
   { cause: Schema.optional(Schema.Unknown) }
 ) {}
 
-class FileSystem extends Effect.Service<FileSystem>()("FileSystem", {
-  effect: Effect.gen(function* () {
-    const use = <A>(
-      fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
-    ): Effect.Effect<A, FileSystemError> =>
-      Effect.tryPromise({
-        try: (signal) => fn(fs, signal),
-        catch: (cause) => new FileSystemError({ cause }),
-      })
+class FileSystem extends ServiceMap.Service<FileSystem, {
+  readonly use: <A>(fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>) => Effect.Effect<A, FileSystemError>
+}>()("FileSystem") {
+  static readonly Default = Layer.effect(
+    FileSystem,
+    Effect.gen(function* () {
+      const use = <A>(
+        fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>
+      ): Effect.Effect<A, FileSystemError> =>
+        Effect.tryPromise({
+          try: (signal) => fn(fs_, signal),
+          catch: (cause) => new FileSystemError({ cause }),
+        })
 
-    return { use } as const
-  }),
-}) {
+      return { use } as const
+    }),
+  )
+
   static readonly Test = Layer.succeed(FileSystem, {
     use: <A>(fn: (fs: typeof fs_, signal: AbortSignal) => Promise<A>) => {
       const files = new Map<string, string>([
@@ -252,6 +272,6 @@ See [Testing with Vitest](./08-testing.md) for more testing patterns.
 
 ## Related
 
-- [Error Handling](./06-error-handling.md) for `Schema.TaggedError` and `Schema.Defect`
-- [Services & Layers](./04-services-and-layers.md) for `Effect.Service` and layer composition
+- [Error Handling](./06-error-handling.md) for `Schema.TaggedErrorClass` and `Schema.Defect`
+- [Services & Layers](./04-services-and-layers.md) for `ServiceMap.Service` and layer composition
 - [Config](./07-config.md) for loading configuration in services

@@ -12,7 +12,7 @@ Effect ships first-class tracing and logging; `@effect/opentelemetry` exports a 
 ## Install
 
 ```bash
-bun add @effect/opentelemetry @effect/platform @opentelemetry/api
+bun add @effect/opentelemetry effect@beta @opentelemetry/api
 ```
 
 ## Send traces + logs to OTLP
@@ -20,9 +20,8 @@ bun add @effect/opentelemetry @effect/platform @opentelemetry/api
 ```typescript
 import { Effect, Layer } from "effect"
 import { BunHttpServer } from "@effect/platform-bun/HttpServer"
-import { HttpServerResponse } from "@effect/platform/HttpServerResponse"
+import { HttpServerResponse, FetchHttpClient } from "effect/unstable/http"
 import { Otlp, Tracer } from "@effect/opentelemetry"
-import { FetchHttpClient } from "@effect/platform/FetchHttpClient"
 
 const otelLayer = Otlp.layer({
   baseUrl: "https://otel-collector.company.dev",

@@ -1,7 +1,7 @@
-import { FileSystem } from "@effect/platform"
+import { FileSystem } from "effect"
 import { NodeFileSystem } from "@effect/platform-node"
 import { describe, expect, it } from "@effect/vitest"
-import { Clock, Context, Effect, Layer, Schema } from "effect"
+import { Clock, Effect, Layer, Option, Schema, ServiceMap } from "effect"
 
 describe("11-testing-with-vitest", () => {
   describe("Basic Testing", () => {
@@ -18,8 +18,8 @@ describe("11-testing-with-vitest", () => {
     )
   })
 
-  describe("it.scoped", () => {
-    it.scoped("temp directory is cleaned up", () =>
+  describe("it.effect (scoped)", () => {
+    it.effect("temp directory is cleaned up", () =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem
 
@@ -37,7 +37,10 @@ describe("11-testing-with-vitest", () => {
   })
 
   describe("Providing Layers", () => {
-    class Database extends Context.Tag("Database")<Database, { query: (sql: string) => Effect.Effect<string[]> }>() {}
+    class Database extends ServiceMap.Service<
+      Database,
+      { query: (sql: string) => Effect.Effect<string[]> }
+    >()("Database") {}
 
     const testDatabase = Layer.succeed(Database, {
       query: (_sql) => Effect.succeed(["mock", "data"]),
@@ -85,13 +88,13 @@ const TicketId = Schema.String.pipe(Schema.brand("TicketId"))
 // biome-ignore lint/correctness/noUnusedVariables: branded type companion
 type TicketId = typeof TicketId.Type
 
-class User extends Schema.Class<User>("User")({
+class User extends Schema.Class("User")({
   id: UserId,
   name: Schema.String,
   email: Schema.String,
 }) {}
 
-class Registration extends Schema.Class<Registration>("Registration")({
+class Registration extends Schema.Class("Registration")({
   id: RegistrationId,
   eventId: EventId,
   userId: UserId,
@@ -99,30 +102,30 @@ class Registration extends Schema.Class<Registration>("Registration")({
   registeredAt: Schema.Date,
 }) {}
 
-class Ticket extends Schema.Class<Ticket>("Ticket")({
+class Ticket extends Schema.Class("Ticket")({
   id: TicketId,
   eventId: EventId,
   code: Schema.String,
 }) {}
 
-class Email extends Schema.Class<Email>("Email")({
+class Email extends Schema.Class("Email")({
   to: Schema.String,
   subject: Schema.String,
   body: Schema.String,
 }) {}
 
-class UserNotFound extends Schema.TaggedError<UserNotFound>()("UserNotFound", {
+class UserNotFound extends Schema.TaggedErrorClass("UserNotFound")("UserNotFound", {
   id: UserId,
 }) {}
 
 // Users service with test layer that has create + findById
-class Users extends Context.Tag("@app/Users")<
+class Users extends ServiceMap.Service<
   Users,
   {
     readonly create: (user: User) => Effect.Effect<void>
     readonly findById: (id: UserId) => Effect.Effect<User, UserNotFound>
   }
->() {
+>()("@app/Users") {
   // Mutable state is fine in tests - JS is single-threaded
   static readonly testLayer = Layer.sync(Users, () => {
     const store = new Map<UserId, User>()
@@ -130,43 +133,47 @@ class Users extends Context.Tag("@app/Users")<
     const create = (user: User) => Effect.sync(() => void store.set(user.id, user))
 
     const findById = (id: UserId) =>
-      Effect.fromNullable(store.get(id)).pipe(Effect.orElseFail(() => UserNotFound.make({ id })))
+      Effect.gen(function* () {
+        const user = Option.fromNullishOr(store.get(id))
+        if (Option.isNone(user)) return yield* Effect.fail(new UserNotFound({ id }))
+        return user.value
+      })
 
-    return Users.of({ create, findById })
+    return { create, findById }
   })
 }
 
 // Tickets service with test layer
-class Tickets extends Context.Tag("@app/Tickets")<
+class Tickets extends ServiceMap.Service<
   Tickets,
   {
     readonly issue: (eventId: EventId, userId: UserId) => Effect.Effect<Ticket>
   }
->() {
+>()("@app/Tickets") {
   static readonly testLayer = Layer.sync(Tickets, () => {
     let counter = 0
 
     const issue = (eventId: EventId, _userId: UserId) =>
       Effect.sync(() =>
-        Ticket.make({
-          id: TicketId.make(`ticket-${counter++}`),
+        new Ticket({
+          id: TicketId.makeUnsafe(`ticket-${counter++}`),
           eventId,
           code: `CODE-${counter}`,
         }),
       )
 
-    return Tickets.of({ issue })
+    return { issue }
   })
 }
 
 // Emails service with test layer that tracks sent emails
-class Emails extends Context.Tag("@app/Emails")<
+class Emails extends ServiceMap.Service<
   Emails,
   {
     readonly send: (email: Email) => Effect.Effect<void>
     readonly sent: Effect.Effect<ReadonlyArray<Email>>
   }
->() {
+>()("@app/Emails") {
   static readonly testLayer = Layer.sync(Emails, () => {
     const emails: Array<Email> = []
 
@@ -174,17 +181,17 @@ class Emails extends Context.Tag("@app/Emails")<
 
     const sent = Effect.sync(() => emails)
 
-    return Emails.of({ send, sent })
+    return { send, sent }
   })
 }
 
 // Events service orchestrates leaf services
-class Events extends Context.Tag("@app/Events")<
+class Events extends ServiceMap.Service<
   Events,
   {
     readonly register: (eventId: EventId, userId: UserId) => Effect.Effect<Registration, UserNotFound>
   }
->() {
+>()("@app/Events") {
   static readonly layer = Layer.effect(
     Events,
     Effect.gen(function* () {
@@ -197,8 +204,8 @@ class Events extends Context.Tag("@app/Events")<
         const ticket = yield* tickets.issue(eventId, userId)
         const now = yield* Clock.currentTimeMillis
 
-        const registration = Registration.make({
-          id: RegistrationId.make(crypto.randomUUID()),
+        const registration = new Registration({
+          id: RegistrationId.makeUnsafe(crypto.randomUUID()),
           eventId,
           userId,
           ticketId: ticket.id,
@@ -206,7 +213,7 @@ class Events extends Context.Tag("@app/Events")<
         })
 
         yield* emails.send(
-          Email.make({
+          new Email({
             to: user.email,
             subject: "Event Registration Confirmed",
             body: `Your ticket code: ${ticket.code}`,
@@ -216,7 +223,7 @@ class Events extends Context.Tag("@app/Events")<
         return registration
       })
 
-      return Events.of({ register })
+      return { register }
     }),
   )
 }
@@ -235,15 +242,15 @@ describe("Events.register", () => {
       const events = yield* Events
 
       // Arrange: create a user
-      const user = User.make({
-        id: UserId.make("user-123"),
+      const user = new User({
+        id: UserId.makeUnsafe("user-123"),
         name: "Alice",
         email: "alice@example.com",
       })
       yield* users.create(user)
 
       // Act
-      const eventId = EventId.make("event-789")
+      const eventId = EventId.makeUnsafe("event-789")
       const registration = yield* events.register(eventId, user.id)
 
       // Assert
@@ -259,15 +266,15 @@ describe("Events.register", () => {
       const emails = yield* Emails
 
       // Arrange
-      const user = User.make({
-        id: UserId.make("user-456"),
+      const user = new User({
+        id: UserId.makeUnsafe("user-456"),
         name: "Bob",
         email: "bob@example.com",
       })
       yield* users.create(user)
 
       // Act
-      yield* events.register(EventId.make("event-789"), user.id)
+      yield* events.register(EventId.makeUnsafe("event-789"), user.id)
 
       // Assert: check sent emails
       const sentEmails = yield* emails.sent

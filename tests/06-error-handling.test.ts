@@ -1,16 +1,16 @@
 import { describe, it } from "@effect/vitest"
-import { assertLeft, assertRight, assertTrue, strictEqual } from "@effect/vitest/utils"
+import { assertFailure, assertSuccess, assertTrue, strictEqual } from "@effect/vitest/utils"
 import { Effect, Schema } from "effect"
 
 describe("06-error-handling", () => {
-  describe("Schema.TaggedError", () => {
+  describe("Schema.TaggedErrorClass", () => {
     it("creates tagged errors with fields", () => {
-      class ValidationError extends Schema.TaggedError<ValidationError>()("ValidationError", {
+      class ValidationError extends Schema.TaggedErrorClass("ValidationError")("ValidationError", {
         field: Schema.String,
         message: Schema.String,
       }) {}
 
-      const error = ValidationError.make({
+      const error = new ValidationError({
         field: "email",
         message: "Invalid format",
       })
@@ -21,24 +21,24 @@ describe("06-error-handling", () => {
     })
 
     it("creates error unions", () => {
-      class ValidationError extends Schema.TaggedError<ValidationError>()("ValidationError", {
+      class ValidationError extends Schema.TaggedErrorClass("ValidationError")("ValidationError", {
         field: Schema.String,
         message: Schema.String,
       }) {}
 
-      class NotFoundError extends Schema.TaggedError<NotFoundError>()("NotFoundError", {
+      class NotFoundError extends Schema.TaggedErrorClass("NotFoundError")("NotFoundError", {
         resource: Schema.String,
         id: Schema.String,
       }) {}
 
-      const AppError = Schema.Union(ValidationError, NotFoundError)
+      const AppError = Schema.Union([ValidationError, NotFoundError])
       type AppError = typeof AppError.Type
 
-      const error1: AppError = ValidationError.make({
+      const error1: AppError = new ValidationError({
         field: "email",
         message: "Invalid",
       })
-      const error2: AppError = NotFoundError.make({
+      const error2: AppError = new NotFoundError({
         resource: "User",
         id: "123",
       })
@@ -48,23 +48,23 @@ describe("06-error-handling", () => {
     })
   })
 
-  describe("catchAll", () => {
+  describe("catch", () => {
     it.effect("recovers from all errors", () =>
       Effect.gen(function* () {
-        class HttpError extends Schema.TaggedError<HttpError>()("HttpError", {
+        class HttpError extends Schema.TaggedErrorClass("HttpError")("HttpError", {
           statusCode: Schema.Number,
           message: Schema.String,
         }) {}
 
         const program: Effect.Effect<string, HttpError> = Effect.fail(
-          HttpError.make({
+          new HttpError({
             statusCode: 500,
             message: "Server error",
           }),
         )
 
         const recovered: Effect.Effect<string, never> = program.pipe(
-          Effect.catchAll((error) => Effect.succeed(`Recovered from ${error._tag}`)),
+          Effect.catch((error) => Effect.succeed(`Recovered from ${error._tag}`)),
         )
 
         const result = yield* recovered
@@ -74,24 +74,24 @@ describe("06-error-handling", () => {
 
     it.effect("handles multiple error types", () =>
       Effect.gen(function* () {
-        class HttpError extends Schema.TaggedError<HttpError>()("HttpError", {
+        class HttpError extends Schema.TaggedErrorClass("HttpError")("HttpError", {
           statusCode: Schema.Number,
           message: Schema.String,
         }) {}
 
-        class ValidationError extends Schema.TaggedError<ValidationError>()("ValidationError", {
+        class ValidationError extends Schema.TaggedErrorClass("ValidationError")("ValidationError", {
           message: Schema.String,
         }) {}
 
         const program = (useHttp: boolean): Effect.Effect<string, HttpError | ValidationError> => {
           if (useHttp) {
-            return Effect.fail(HttpError.make({ statusCode: 404, message: "Not found" }))
+            return Effect.fail(new HttpError({ statusCode: 404, message: "Not found" }))
           }
-          return Effect.fail(ValidationError.make({ message: "Invalid input" }))
+          return Effect.fail(new ValidationError({ message: "Invalid input" }))
         }
 
         const recovered = (useHttp: boolean) =>
-          program(useHttp).pipe(Effect.catchAll((error) => Effect.succeed(`Error: ${error._tag}`)))
+          program(useHttp).pipe(Effect.catch((error) => Effect.succeed(`Error: ${error._tag}`)))
 
         const result1 = yield* recovered(true)
         const result2 = yield* recovered(false)
@@ -105,17 +105,17 @@ describe("06-error-handling", () => {
   describe("catchTag", () => {
     it.effect("catches specific error by tag", () =>
       Effect.gen(function* () {
-        class HttpError extends Schema.TaggedError<HttpError>()("HttpError", {
+        class HttpError extends Schema.TaggedErrorClass("HttpError")("HttpError", {
           statusCode: Schema.Number,
           message: Schema.String,
         }) {}
 
-        class ValidationError extends Schema.TaggedError<ValidationError>()("ValidationError", {
+        class ValidationError extends Schema.TaggedErrorClass("ValidationError")("ValidationError", {
           message: Schema.String,
         }) {}
 
         const program: Effect.Effect<string, HttpError | ValidationError> = Effect.fail(
-          HttpError.make({
+          new HttpError({
             statusCode: 500,
             message: "Internal server error",
           }),
@@ -132,26 +132,26 @@ describe("06-error-handling", () => {
 
     it.effect("preserves unhandled errors", () =>
       Effect.gen(function* () {
-        class HttpError extends Schema.TaggedError<HttpError>()("HttpError", {
+        class HttpError extends Schema.TaggedErrorClass("HttpError")("HttpError", {
           statusCode: Schema.Number,
           message: Schema.String,
         }) {}
 
-        class ValidationError extends Schema.TaggedError<ValidationError>()("ValidationError", {
+        class ValidationError extends Schema.TaggedErrorClass("ValidationError")("ValidationError", {
           message: Schema.String,
         }) {}
 
         const program: Effect.Effect<string, HttpError | ValidationError> = Effect.fail(
-          ValidationError.make({ message: "Bad input" }),
+          new ValidationError({ message: "Bad input" }),
         )
 
         const recovered = program.pipe(
           Effect.catchTag("HttpError", () => Effect.succeed("Recovered from HTTP")),
-          Effect.either,
+          Effect.result,
         )
 
         const result = yield* recovered
-        assertLeft(result, ValidationError.make({ message: "Bad input" }))
+        assertFailure(result, new ValidationError({ message: "Bad input" }))
       }),
     )
   })
@@ -159,20 +159,20 @@ describe("06-error-handling", () => {
   describe("catchTags", () => {
     it.effect("handles multiple error tags at once", () =>
       Effect.gen(function* () {
-        class HttpError extends Schema.TaggedError<HttpError>()("HttpError", {
+        class HttpError extends Schema.TaggedErrorClass("HttpError")("HttpError", {
           statusCode: Schema.Number,
           message: Schema.String,
         }) {}
 
-        class ValidationError extends Schema.TaggedError<ValidationError>()("ValidationError", {
+        class ValidationError extends Schema.TaggedErrorClass("ValidationError")("ValidationError", {
           message: Schema.String,
         }) {}
 
         const program = (errorType: "http" | "validation"): Effect.Effect<string, HttpError | ValidationError> => {
           if (errorType === "http") {
-            return Effect.fail(HttpError.make({ statusCode: 500, message: "Server error" }))
+            return Effect.fail(new HttpError({ statusCode: 500, message: "Server error" }))
           }
-          return Effect.fail(ValidationError.make({ message: "Invalid" }))
+          return Effect.fail(new ValidationError({ message: "Invalid" }))
         }
 
         const recovered = (errorType: "http" | "validation") =>
@@ -195,7 +195,7 @@ describe("06-error-handling", () => {
   describe("Schema.Defect", () => {
     it.effect("wraps unknown errors", () =>
       Effect.gen(function* () {
-        class ApiError extends Schema.TaggedError<ApiError>()("ApiError", {
+        class ApiError extends Schema.TaggedErrorClass("ApiError")("ApiError", {
           endpoint: Schema.String,
           statusCode: Schema.Number,
           error: Schema.Defect,
@@ -203,7 +203,7 @@ describe("06-error-handling", () => {
 
         const makeError = (message: string) =>
           Effect.fail(
-            ApiError.make({
+            new ApiError({
               endpoint: "/api/users/123",
               statusCode: 500,
               error: new Error(message),
@@ -211,7 +211,7 @@ describe("06-error-handling", () => {
           )
 
         const result = yield* makeError("Network timeout").pipe(
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Effect.succeed({
               tag: error._tag,
               endpoint: error.endpoint,
@@ -227,13 +227,13 @@ describe("06-error-handling", () => {
     )
 
     it("handles non-Error values", () => {
-      class WrappedError extends Schema.TaggedError<WrappedError>()("WrappedError", {
+      class WrappedError extends Schema.TaggedErrorClass("WrappedError")("WrappedError", {
         value: Schema.Defect,
       }) {}
 
-      const error1 = WrappedError.make({ value: "string error" })
-      const error2 = WrappedError.make({ value: { code: 42 } })
-      const error3 = WrappedError.make({ value: new Error("real error") })
+      const error1 = new WrappedError({ value: "string error" })
+      const error2 = new WrappedError({ value: { code: 42 } })
+      const error3 = new WrappedError({ value: new Error("real error") })
 
       strictEqual(error1._tag, "WrappedError")
       strictEqual(error2._tag, "WrappedError")
@@ -244,11 +244,11 @@ describe("06-error-handling", () => {
   describe("Error Propagation", () => {
     it.effect("errors bubble up through Effect.gen", () =>
       Effect.gen(function* () {
-        class AppError extends Schema.TaggedError<AppError>()("AppError", {
+        class AppError extends Schema.TaggedErrorClass("AppError")("AppError", {
           message: Schema.String,
         }) {}
 
-        const failingStep = Effect.fail(AppError.make({ message: "Step failed" }))
+        const failingStep = Effect.fail(new AppError({ message: "Step failed" }))
 
         const program = Effect.gen(function* () {
           yield* Effect.succeed(1)
@@ -257,29 +257,29 @@ describe("06-error-handling", () => {
           return "done"
         })
 
-        const result = yield* program.pipe(Effect.either)
+        const result = yield* program.pipe(Effect.result)
 
-        assertLeft(result, AppError.make({ message: "Step failed" }))
+        assertFailure(result, new AppError({ message: "Step failed" }))
       }),
     )
 
     it.effect("can transform errors", () =>
       Effect.gen(function* () {
-        class OriginalError extends Schema.TaggedError<OriginalError>()("OriginalError", {
+        class OriginalError extends Schema.TaggedErrorClass("OriginalError")("OriginalError", {
           code: Schema.Number,
         }) {}
 
-        class TransformedError extends Schema.TaggedError<TransformedError>()("TransformedError", {
+        class TransformedError extends Schema.TaggedErrorClass("TransformedError")("TransformedError", {
           originalCode: Schema.Number,
           message: Schema.String,
         }) {}
 
-        const program = Effect.fail(OriginalError.make({ code: 404 }))
+        const program = Effect.fail(new OriginalError({ code: 404 }))
 
         const transformed = program.pipe(
           Effect.catchTag("OriginalError", (error) =>
             Effect.fail(
-              TransformedError.make({
+              new TransformedError({
                 originalCode: error.code,
                 message: `Error code: ${error.code}`,
               }),
@@ -287,11 +287,11 @@ describe("06-error-handling", () => {
           ),
         )
 
-        const result = yield* transformed.pipe(Effect.either)
+        const result = yield* transformed.pipe(Effect.result)
 
-        assertLeft(
+        assertFailure(
           result,
-          TransformedError.make({
+          new TransformedError({
             originalCode: 404,
             message: "Error code: 404",
           }),
@@ -301,17 +301,17 @@ describe("06-error-handling", () => {
   })
 
   describe("Success Cases", () => {
-    it.effect("returns Right for successful effects", () =>
+    it.effect("returns Success for successful effects", () =>
       Effect.gen(function* () {
-        class MyError extends Schema.TaggedError<MyError>()("MyError", {
+        class MyError extends Schema.TaggedErrorClass("MyError")("MyError", {
           message: Schema.String,
         }) {}
 
         const program: Effect.Effect<string, MyError> = Effect.succeed("success")
 
-        const result = yield* program.pipe(Effect.either)
+        const result = yield* program.pipe(Effect.result)
 
-        assertRight(result, "success")
+        assertSuccess(result, "success")
       }),
     )
   })

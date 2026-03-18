@@ -1,16 +1,17 @@
 import {
   FetchHttpClient,
+  HttpClient,
+  HttpClientRequest,
+  HttpClientResponse,
+} from "effect/unstable/http"
+import {
   HttpApi,
   HttpApiClient,
   HttpApiEndpoint,
   HttpApiGroup,
-  HttpApiSchema,
-  HttpClient,
-  HttpClientRequest,
-  HttpClientResponse,
-} from "@effect/platform"
+} from "effect/unstable/httpapi"
 import { describe, expect, it } from "@effect/vitest"
-import { Context, Effect, flow, Layer, Schema } from "effect"
+import { Effect, flow, Layer, Schema, ServiceMap } from "effect"
 
 // ============================================================================
 // Schemas
@@ -22,14 +23,14 @@ type UserId = typeof UserId.Type
 const RepoId = Schema.Number.pipe(Schema.brand("RepoId"))
 type RepoId = typeof RepoId.Type
 
-class User extends Schema.Class<User>("User")({
+class User extends Schema.Class("User")({
   id: UserId,
   login: Schema.String,
   name: Schema.NullOr(Schema.String),
   public_repos: Schema.Number,
 }) {}
 
-class Repo extends Schema.Class<Repo>("Repo")({
+class Repo extends Schema.Class("Repo")({
   id: RepoId,
   name: Schema.String,
   full_name: Schema.String,
@@ -41,14 +42,14 @@ class Repo extends Schema.Class<Repo>("Repo")({
 // API Service
 // ============================================================================
 
-class GitHubApi extends Context.Tag("GitHubApi")<
+class GitHubApi extends ServiceMap.Service<
   GitHubApi,
   {
     readonly getUser: (username: string) => Effect.Effect<User, unknown>
     readonly getRepo: (owner: string, repo: string) => Effect.Effect<Repo, unknown>
     readonly listRepos: (username: string) => Effect.Effect<ReadonlyArray<Repo>, unknown>
   }
->() {
+>()("GitHubApi") {
   static layer = Layer.effect(
     GitHubApi,
     Effect.gen(function* () {
@@ -81,20 +82,27 @@ class GitHubApi extends Context.Tag("GitHubApi")<
 // HttpApi Definition
 // ============================================================================
 
-const usernameParam = HttpApiSchema.param("username", Schema.String)
-const ownerParam = HttpApiSchema.param("owner", Schema.String)
-const repoParam = HttpApiSchema.param("repo", Schema.String)
+const UsersApi = HttpApiGroup.make("users")
+  .add(
+    HttpApiEndpoint.get("getUser", "/users/:username", {
+      params: { username: Schema.String },
+      success: User,
+    }),
+    HttpApiEndpoint.get("listRepos", "/users/:username/repos", {
+      params: { username: Schema.String },
+      success: Schema.Array(Repo),
+    }),
+  )
 
-class UsersApi extends HttpApiGroup.make("users")
-  .add(HttpApiEndpoint.get("getUser")`/${usernameParam}`.addSuccess(User))
-  .add(HttpApiEndpoint.get("listRepos")`/${usernameParam}/repos`.addSuccess(Schema.Array(Repo)))
-  .prefix("/users") {}
+const ReposApi = HttpApiGroup.make("repos")
+  .add(
+    HttpApiEndpoint.get("getRepo", "/repos/:owner/:repo", {
+      params: { owner: Schema.String, repo: Schema.String },
+      success: Repo,
+    }),
+  )
 
-class ReposApi extends HttpApiGroup.make("repos")
-  .add(HttpApiEndpoint.get("getRepo")`/${ownerParam}/${repoParam}`.addSuccess(Repo))
-  .prefix("/repos") {}
-
-class GitHubHttpApi extends HttpApi.make("github-api").add(UsersApi).add(ReposApi) {}
+const GitHubHttpApi = HttpApi.make("github-api").add(UsersApi).add(ReposApi)
 
 // ============================================================================
 // Tests
@@ -171,10 +179,10 @@ describe("HTTP Clients", () => {
         const response = yield* HttpClient.get("https://api.github.com/repos/nonexistent-org-12345/nonexistent-repo")
         const result = yield* HttpClientResponse.filterStatusOk(response).pipe(
           Effect.flatMap(HttpClientResponse.schemaBodyJson(Repo)),
-          Effect.either,
+          Effect.result,
         )
 
-        expect(result._tag).toBe("Left")
+        expect(result._tag).toBe("Failure")
       }).pipe(Effect.provide(FetchHttpClient.layer)),
     )
   })
@@ -251,7 +259,7 @@ describe("HTTP Clients", () => {
           baseUrl: "https://api.github.com",
         })
         const user = yield* client.users.getUser({
-          path: { username: "effect-ts" },
+          params: { username: "effect-ts" },
         })
 
         expect(user.login.toLowerCase()).toBe("effect-ts")
@@ -265,7 +273,7 @@ describe("HTTP Clients", () => {
           baseUrl: "https://api.github.com",
         })
         const repo = yield* client.repos.getRepo({
-          path: { owner: "Effect-TS", repo: "effect" },
+          params: { owner: "Effect-TS", repo: "effect" },
         })
 
         expect(repo.full_name).toBe("Effect-TS/effect")
@@ -279,7 +287,7 @@ describe("HTTP Clients", () => {
           baseUrl: "https://api.github.com",
         })
         const repos = yield* client.users.listRepos({
-          path: { username: "effect-ts" },
+          params: { username: "effect-ts" },
         })
 
         expect(repos.length).toBeGreaterThan(0)
@@ -294,10 +302,10 @@ describe("HTTP Clients", () => {
         const response = yield* HttpClient.get("https://invalid.domain.that.does.not.exist.example/repos")
         return yield* HttpClientResponse.schemaBodyJson(Repo)(response)
       }).pipe(
-        Effect.catchTag("RequestError", (e) => Effect.succeed(`caught: ${e._tag}`)),
+        Effect.catchTag("HttpClientError", (e) => Effect.succeed(`caught: ${e._tag}`)),
         Effect.provide(FetchHttpClient.layer),
         Effect.map((result) => {
-          expect(result).toBe("caught: RequestError")
+          expect(result).toBe("caught: HttpClientError")
           return result
         }),
       ),
@@ -312,7 +320,7 @@ describe("HTTP Clients", () => {
         const response = yield* HttpClient.get("https://api.github.com/repos/Effect-TS/effect")
         return yield* HttpClientResponse.schemaBodyJson(BadSchema)(response)
       }).pipe(
-        Effect.catchTag("ParseError", () => Effect.succeed("parse failed")),
+        Effect.catchTag("SchemaError", () => Effect.succeed("parse failed")),
         Effect.provide(FetchHttpClient.layer),
         Effect.map((result) => {
           expect(result).toBe("parse failed")

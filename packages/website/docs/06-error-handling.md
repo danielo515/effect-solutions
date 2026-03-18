@@ -15,7 +15,7 @@ Define domain errors with `Schema.TaggedError`:
 ```typescript
 import { Schema } from "effect"
 
-class ValidationError extends Schema.TaggedError<ValidationError>()(
+class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
   "ValidationError",
   {
     field: Schema.String,
@@ -23,7 +23,7 @@ class ValidationError extends Schema.TaggedError<ValidationError>()(
   }
 ) {}
 
-class NotFoundError extends Schema.TaggedError<NotFoundError>()(
+class NotFoundError extends Schema.TaggedErrorClass("NotFoundError")(
   "NotFoundError",
   {
     resource: Schema.String,
@@ -31,11 +31,11 @@ class NotFoundError extends Schema.TaggedError<NotFoundError>()(
   }
 ) {}
 
-const AppError = Schema.Union(ValidationError, NotFoundError)
+const AppError = Schema.Union([ValidationError, NotFoundError])
 type AppError = typeof AppError.Type
 
 // Usage
-const error = ValidationError.make({
+const error = new ValidationError({
   field: "email",
   message: "Invalid format",
 })
@@ -54,7 +54,7 @@ const error = ValidationError.make({
 ```typescript
 import { Effect, Random, Schema } from "effect"
 
-class BadLuck extends Schema.TaggedError<BadLuck>()(
+class BadLuck extends Schema.TaggedErrorClass("BadLuck")(
   "BadLuck",
   { roll: Schema.Number }
 ) {}
@@ -63,7 +63,7 @@ const rollDie = Effect.gen(function* () {
   const roll = yield* Random.nextIntBetween(1, 6)
   if (roll === 1) {
     // Yield the tagged error directly; no Effect.fail needed
-    yield* BadLuck.make({ roll })
+    yield* new BadLuck({ roll })
   }
   return { roll }
 })
@@ -73,14 +73,14 @@ const rollDie = Effect.gen(function* () {
 
 Effect provides several functions for recovering from errors. Use these to handle errors and continue program execution.
 
-### catchAll
+### catch
 
 Handle all errors by providing a fallback effect:
 
 ```typescript
 import { Effect, Schema } from "effect"
 
-class HttpError extends Schema.TaggedError<HttpError>()(
+class HttpError extends Schema.TaggedErrorClass("HttpError")(
   "HttpError",
   {
     statusCode: Schema.Number,
@@ -88,7 +88,7 @@ class HttpError extends Schema.TaggedError<HttpError>()(
   }
 ) {}
 
-class ValidationError extends Schema.TaggedError<ValidationError>()(
+class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
   "ValidationError",
   {
     message: Schema.String,
@@ -98,7 +98,7 @@ class ValidationError extends Schema.TaggedError<ValidationError>()(
 declare const program: Effect.Effect<string, HttpError | ValidationError>
 
 const recovered: Effect.Effect<string, never> = program.pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError("Error occurred", error)
       return `Recovered from ${error.name}`
@@ -114,7 +114,7 @@ Handle specific errors by their `_tag`.
 ```typescript
 import { Effect, Schema } from "effect"
 
-class HttpError extends Schema.TaggedError<HttpError>()(
+class HttpError extends Schema.TaggedErrorClass("HttpError")(
   "HttpError",
   {
     statusCode: Schema.Number,
@@ -122,7 +122,7 @@ class HttpError extends Schema.TaggedError<HttpError>()(
   }
 ) {}
 
-class ValidationError extends Schema.TaggedError<ValidationError>()(
+class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
   "ValidationError",
   {
     message: Schema.String,
@@ -130,7 +130,7 @@ class ValidationError extends Schema.TaggedError<ValidationError>()(
 ) {}
 
 const program: Effect.Effect<string, HttpError | ValidationError> =
-  HttpError.make({
+  new HttpError({
     statusCode: 500,
     message: "Internal server error",
   })
@@ -152,7 +152,7 @@ Handle multiple error types at once.
 ```typescript
 import { Effect, Schema } from "effect"
 
-class HttpError extends Schema.TaggedError<HttpError>()(
+class HttpError extends Schema.TaggedErrorClass("HttpError")(
   "HttpError",
   {
     statusCode: Schema.Number,
@@ -160,7 +160,7 @@ class HttpError extends Schema.TaggedError<HttpError>()(
   }
 ) {}
 
-class ValidationError extends Schema.TaggedError<ValidationError>()(
+class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
   "ValidationError",
   {
     message: Schema.String,
@@ -168,7 +168,7 @@ class ValidationError extends Schema.TaggedError<ValidationError>()(
 ) {}
 
 const program: Effect.Effect<string, HttpError | ValidationError> =
-  HttpError.make({
+  new HttpError({
     statusCode: 500,
     message: "Internal server error",
   })
@@ -211,7 +211,7 @@ Use `Schema.Defect` to wrap unknown errors from external libraries.
 ```typescript
 import { Schema, Effect } from "effect"
 
-class ApiError extends Schema.TaggedError<ApiError>()(
+class ApiError extends Schema.TaggedErrorClass("ApiError")(
   "ApiError",
   {
     endpoint: Schema.String,
@@ -225,7 +225,7 @@ class ApiError extends Schema.TaggedError<ApiError>()(
 const fetchUser = (id: string) =>
   Effect.tryPromise({
     try: () => fetch(`/api/users/${id}`).then((r: Response) => r.json()),
-    catch: (error) => ApiError.make({
+    catch: (error) => new ApiError({
       endpoint: `/api/users/${id}`,
       statusCode: 500,
       error

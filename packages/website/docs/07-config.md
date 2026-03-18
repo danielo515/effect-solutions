@@ -16,7 +16,7 @@ By default, Effect loads config from **environment variables**. However, you can
 - **Tests:** Load from in-memory maps
 - **Development:** Load from JSON files or hardcoded values
 
-This is controlled via `Layer.setConfigProvider`.
+This is controlled via `ConfigProvider.layer`.
 
 ## Basic Usage
 
@@ -28,7 +28,7 @@ import { Config, Effect } from "effect"
 const program = Effect.gen(function* () {
   // Reads from process.env.API_KEY and process.env.PORT
   const apiKey = yield* Config.redacted("API_KEY")
-  const port = yield* Config.integer("PORT")
+  const port = yield* Config.int("PORT")
 
   console.log(`Starting server on port ${port}`)
   // apiKey is redacted in logs
@@ -45,20 +45,18 @@ import { Config, ConfigProvider, Effect, Layer } from "effect"
 
 const program = Effect.gen(function* () {
   const apiKey = yield* Config.redacted("API_KEY")
-  const port = yield* Config.integer("PORT")
+  const port = yield* Config.int("PORT")
   console.log(`Starting server on port ${port}`)
 })
 
 // Use a different config source
-const testConfigProvider = ConfigProvider.fromMap(
-  new Map([
-    ["API_KEY", "test-key-123"],
-    ["PORT", "3000"],
-  ])
-)
+const testConfigProvider = ConfigProvider.fromUnknown({
+  API_KEY: "test-key-123",
+  PORT: "3000",
+})
 
 // Apply the provider
-const testConfigLayer = Layer.setConfigProvider(testConfigProvider)
+const testConfigLayer = ConfigProvider.layer(testConfigProvider)
 
 // Run with test config
 Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
@@ -69,16 +67,16 @@ Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
 **Best practice:** Create a config service with a `layer` export:
 
 ```typescript
-import { Config, Context, Effect, Layer, Redacted } from "effect"
+import { Config, Effect, Layer, Redacted, ServiceMap } from "effect"
 
-class ApiConfig extends Context.Tag("@app/ApiConfig")<
+class ApiConfig extends ServiceMap.Service<
   ApiConfig,
   {
     readonly apiKey: Redacted.Redacted
     readonly baseUrl: string
     readonly timeout: number
   }
->() {
+>()("@app/ApiConfig") {
   static readonly layer = Layer.effect(
     ApiConfig,
     Effect.gen(function* () {
@@ -86,22 +84,22 @@ class ApiConfig extends Context.Tag("@app/ApiConfig")<
       const baseUrl = yield* Config.string("API_BASE_URL").pipe(
         Config.orElse(() => Config.succeed("https://api.example.com"))
       )
-      const timeout = yield* Config.integer("API_TIMEOUT").pipe(
+      const timeout = yield* Config.int("API_TIMEOUT").pipe(
         Config.orElse(() => Config.succeed(30000))
       )
 
-      return ApiConfig.of({ apiKey, baseUrl, timeout })
+      return { apiKey, baseUrl, timeout }
     })
   )
 
   // For tests - hardcoded values
   static readonly testLayer = Layer.succeed(
     ApiConfig,
-    ApiConfig.of({
+    {
       apiKey: Redacted.make("test-key"),
       baseUrl: "https://test.example.com",
       timeout: 5000,
-    })
+    }
   )
 }
 ```
@@ -122,7 +120,7 @@ Config.string("MY_VAR")
 
 // Numbers
 Config.number("PORT")
-Config.integer("MAX_RETRIES")
+Config.int("MAX_RETRIES")
 
 // Booleans
 Config.boolean("DEBUG")
@@ -147,7 +145,7 @@ import { Config, Effect } from "effect"
 
 const program = Effect.gen(function* () {
   // With orElse
-  const port = yield* Config.integer("PORT").pipe(
+  const port = yield* Config.int("PORT").pipe(
     Config.orElse(() => Config.succeed(3000))
   )
 
@@ -161,28 +159,28 @@ const program = Effect.gen(function* () {
 
 ## Validation with Schema
 
-**Recommended:** Use `Schema.Config` for validation instead of `Config.mapOrFail`:
+**Recommended:** Use `Config.schema` for validation instead of `Config.mapOrFail`:
 
 ```typescript
 import { Config, Effect, Schema } from "effect"
 
 // Define schemas with built-in validation
 const Port = Schema.NumberFromString.pipe(
-  Schema.int(),
-  Schema.between(1, 65535)
+  Schema.check(Schema.isInt()),
+  Schema.check(Schema.isBetween({minimum: 1, maximum: 65535}))
 )
-const Environment = Schema.Literal("development", "staging", "production")
+const Environment = Schema.Literals(["development", "staging", "production"])
 
 const program = Effect.gen(function* () {
   // Schema handles validation automatically
-  const port = yield* Schema.Config("PORT", Port)
-  const env = yield* Schema.Config("ENV", Environment)
+  const port = yield* Config.schema(Port, "PORT")
+  const env = yield* Config.schema(Environment, "ENV")
 
   return { port, env }
 })
 ```
 
-**Schema.Config benefits:**
+**Config.schema benefits:**
 
 - Automatic type inference from schema
 - Rich validation errors with schema messages
@@ -192,17 +190,17 @@ const program = Effect.gen(function* () {
 **Example with branded types:**
 
 ```typescript
-import { Effect, Schema } from "effect"
+import { Config, Effect, Schema } from "effect"
 
 const Port = Schema.NumberFromString.pipe(
-  Schema.int(),
-  Schema.between(1, 65535),
+  Schema.check(Schema.isInt()),
+  Schema.check(Schema.isBetween({minimum: 1, maximum: 65535})),
   Schema.brand("Port")
 )
 type Port = typeof Port.Type
 
 const program = Effect.gen(function* () {
-  const port = yield* Schema.Config("PORT", Port)
+  const port = yield* Config.schema(Port, "PORT")
   // port is branded as Port, preventing misuse
   return port
 })
@@ -216,7 +214,7 @@ You can use `Config.mapOrFail` if you need custom validation without Schema:
 import { Config, ConfigError, Effect } from "effect"
 
 const program = Effect.gen(function* () {
-  const port = yield* Config.integer("PORT").pipe(
+  const port = yield* Config.int("PORT").pipe(
     Config.mapOrFail((p) =>
       p > 0 && p < 65536
         ? Effect.succeed(p)
@@ -230,30 +228,28 @@ const program = Effect.gen(function* () {
 
 ## Config Providers
 
-Override where config is loaded from using `Layer.setConfigProvider`:
+Override where config is loaded from using `ConfigProvider.layer`:
 
 ```typescript
 import { ConfigProvider, Effect, Layer } from "effect"
 
 const program = Effect.unit
 
-const testConfigLayer = Layer.setConfigProvider(
-  ConfigProvider.fromMap(
-    new Map([
-      ["API_KEY", "test-key"],
-      ["PORT", "3000"],
-    ])
-  )
+const testConfigLayer = ConfigProvider.layer(
+  ConfigProvider.fromUnknown({
+    API_KEY: "test-key",
+    PORT: "3000",
+  })
 )
 
-const jsonConfigLayer = Layer.setConfigProvider(
+const jsonConfigLayer = ConfigProvider.layer(
   ConfigProvider.fromJson({
     API_KEY: "prod-key",
     PORT: 8080,
   })
 )
 
-const prefixedConfigLayer = Layer.setConfigProvider(
+const prefixedConfigLayer = ConfigProvider.layer(
   ConfigProvider.fromEnv().pipe(
     ConfigProvider.nested("APP") // Reads APP_API_KEY, APP_PORT, etc.
   )
@@ -268,21 +264,21 @@ Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
 **Best practice:** Just provide a layer with test values directly. No need for `ConfigProvider.fromMap`:
 
 ```typescript
-import { Config, Context, Effect, Layer, Redacted } from "effect"
+import { Config, Effect, Layer, Redacted, ServiceMap } from "effect"
 
-class ApiConfig extends Context.Tag("@app/ApiConfig")<
+class ApiConfig extends ServiceMap.Service<
   ApiConfig,
   {
     readonly apiKey: Redacted.Redacted
     readonly baseUrl: string
   }
->() {
+>()("@app/ApiConfig") {
   static readonly layer = Layer.effect(
     ApiConfig,
     Effect.gen(function* () {
       const apiKey = yield* Config.redacted("API_KEY")
       const baseUrl = yield* Config.string("API_BASE_URL")
-      return ApiConfig.of({ apiKey, baseUrl })
+      return { apiKey, baseUrl }
     })
   )
 }
@@ -361,14 +357,14 @@ const program = Effect.gen(function* () {
 ## Example: Database Config Layer
 
 ```typescript
-import { Context, Effect, Layer, Redacted, Schema } from "effect"
+import { Config, Effect, Layer, Redacted, Schema, ServiceMap } from "effect"
 
 const Port = Schema.NumberFromString.pipe(
-  Schema.int(),
-  Schema.between(1, 65535)
+  Schema.check(Schema.isInt()),
+  Schema.check(Schema.isBetween({minimum: 1, maximum: 65535}))
 )
 
-class DatabaseConfig extends Context.Tag("@app/DatabaseConfig")<
+class DatabaseConfig extends ServiceMap.Service<
   DatabaseConfig,
   {
     readonly host: string
@@ -376,16 +372,16 @@ class DatabaseConfig extends Context.Tag("@app/DatabaseConfig")<
     readonly database: string
     readonly password: Redacted.Redacted
   }
->() {
+>()("@app/DatabaseConfig") {
   static readonly layer = Layer.effect(
     DatabaseConfig,
     Effect.gen(function* () {
-      const host = yield* Schema.Config("DB_HOST", Schema.String)
-      const port = yield* Schema.Config("DB_PORT", Port)
-      const database = yield* Schema.Config("DB_NAME", Schema.String)
-      const password = yield* Schema.Config("DB_PASSWORD", Schema.Redacted(Schema.String))
+      const host = yield* Config.schema(Schema.String, "DB_HOST")
+      const port = yield* Config.schema(Port, "DB_PORT")
+      const database = yield* Config.schema(Schema.String, "DB_NAME")
+      const password = yield* Config.schema(Schema.Redacted(Schema.String), "DB_PASSWORD")
 
-      return DatabaseConfig.of({ host, port, database, password })
+      return { host, port, database, password }
     })
   )
 }
