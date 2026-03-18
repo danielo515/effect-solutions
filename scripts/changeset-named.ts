@@ -1,9 +1,8 @@
 #!/usr/bin/env bun
 
-import { Args, Command, Options } from "@effect/cli"
-import { FileSystem } from "@effect/platform"
-import { BunContext, BunRuntime } from "@effect/platform-bun"
-import { Effect, pipe } from "effect"
+import { Argument, Command, Flag } from "effect/unstable/cli"
+import { BunRuntime, BunServices } from "@effect/platform-bun"
+import { Effect, FileSystem, pipe } from "effect"
 
 const PACKAGES = {
   website: "@effect-best-practices/website",
@@ -18,16 +17,16 @@ const isPackageKey = (value: string): value is PackageKey => value in PACKAGES
 const isBumpType = (value: string): value is BumpType => ["patch", "minor", "major"].includes(value)
 
 const changeset = Command.make("changeset", {
-  description: Args.text({ name: "description" }).pipe(Args.withDescription("Changeset description")),
-  package: Options.text("package").pipe(
-    Options.withAlias("p"),
-    Options.withDescription("Package: website or cli"),
-    Options.withDefault("website"),
+  description: Argument.string("description").pipe(Argument.withDescription("Changeset description")),
+  package: Flag.string("package").pipe(
+    Flag.withAlias("p"),
+    Flag.withDescription("Package: website or cli"),
+    Flag.withDefault("cli"),
   ),
-  bump: Options.text("bump").pipe(
-    Options.withAlias("b"),
-    Options.withDescription("Bump type: patch, minor, or major"),
-    Options.withDefault("patch"),
+  bump: Flag.string("bump").pipe(
+    Flag.withAlias("b"),
+    Flag.withDescription("Bump type: patch, minor, or major"),
+    Flag.withDefault("patch"),
   ),
 }).pipe(
   Command.withDescription("Create a named changeset file"),
@@ -54,14 +53,14 @@ ${description}
 `
 
       yield* fs.writeFileString(filePath, content)
-      yield* Effect.log(`✅ Created changeset: ${fileName}`)
+      yield* Effect.log(`Created changeset: ${fileName}`)
     }),
   ),
 )
 
-const run = Command.run(changeset, {
+const run = Command.runWith(changeset, {
   name: "changeset-named",
   version: "0.0.0",
 })
 
-pipe(run(process.argv), Effect.provide(BunContext.layer), BunRuntime.runMain)
+pipe(run(process.argv.slice(2)), Effect.provide(BunServices.layer), BunRuntime.runMain)
