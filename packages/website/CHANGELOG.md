@@ -1,5 +1,7 @@
 # @effect-best-practices/website
 
+## 0.5.0
+
 ## 0.4.19
 
 ### Patch Changes

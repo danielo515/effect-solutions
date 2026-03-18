@@ -1,5 +1,11 @@
 # effect-solutions
 
+## 0.5.0
+
+### Minor Changes
+
+- [`98ca943`](https://github.com/kitlangton/effect-solutions/commit/98ca943117cdef4110547cbd353c6927f9df586e) Thanks [@kitlangton](https://github.com/kitlangton)! - remove setup command update docs for v4
+
 ## 0.4.19
 
 ## 0.4.18
