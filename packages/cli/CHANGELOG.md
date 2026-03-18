@@ -1,5 +1,11 @@
 # effect-solutions
 
+## 0.5.1
+
+### Patch Changes
+
+- [`10a45a2`](https://github.com/kitlangton/effect-solutions/commit/10a45a25ab6e1b386e1867ab2d729fcd6ad367a9) Thanks [@kitlangton](https://github.com/kitlangton)! - Fix CLI argv parsing for Effect v4 runWith
+
 ## 0.5.0
 
 ### Minor Changes
