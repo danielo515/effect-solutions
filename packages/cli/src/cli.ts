@@ -191,11 +191,9 @@ if (import.meta.main) {
     Effect.gen(function* () {
       const notifier = yield* UpdateNotifier
       yield* notifier.check(CLI_NAME, CLI_VERSION)
-      // In dev mode (bun src/cli.ts args...), argv has 2 prefix elements.
-      // In compiled binary mode (./effect-solutions args...), argv has 1.
-      // Detect by checking if argv[1] looks like a script path.
-      const prefixLen = process.argv[1]?.match(/\.(ts|js|mjs)$/) ? 2 : 1
-      yield* runCli(process.argv.slice(prefixLen))
+      // Bun always provides 2 argv prefix elements: ["bun", scriptOrBinaryPath, ...args]
+      // This applies in both dev mode (bun src/cli.ts) and compiled binaries.
+      yield* runCli(process.argv.slice(2))
     }),
     Effect.provide(MainLayer),
     Effect.tapError((error) => Console.error(pc.red(`Error: ${error}`))),
