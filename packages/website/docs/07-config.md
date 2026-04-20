@@ -67,9 +67,9 @@ Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
 **Best practice:** Create a config service with a `layer` export:
 
 ```typescript
-import { Config, Effect, Layer, Redacted, ServiceMap } from "effect"
+import { Config, Context, Effect, Layer, Redacted } from "effect"
 
-class ApiConfig extends ServiceMap.Service<
+class ApiConfig extends Context.Service<
   ApiConfig,
   {
     readonly apiKey: Redacted.Redacted
@@ -113,7 +113,7 @@ class ApiConfig extends ServiceMap.Service<
 ## Config Primitives
 
 ```typescript
-import { Config } from "effect"
+import { Config, Schema } from "effect"
 
 // Strings
 Config.string("MY_VAR")
@@ -134,8 +134,8 @@ Config.url("API_URL")
 // Durations
 Config.duration("TIMEOUT")
 
-// Arrays (comma-separated values in env vars)
-Config.array(Config.string(), "TAGS")
+// Arrays (when the provider exposes an actual array node)
+Config.schema(Schema.Array(Schema.String), "TAGS")
 ```
 
 ## Defaults and Fallbacks
@@ -211,14 +211,14 @@ const program = Effect.gen(function* () {
 You can use `Config.mapOrFail` if you need custom validation without Schema:
 
 ```typescript
-import { Config, ConfigError, Effect } from "effect"
+import { Config, ConfigProvider, Effect } from "effect"
 
 const program = Effect.gen(function* () {
   const port = yield* Config.int("PORT").pipe(
     Config.mapOrFail((p) =>
       p > 0 && p < 65536
         ? Effect.succeed(p)
-        : Effect.fail(ConfigError.InvalidData([], "Port must be 1-65535"))
+        : Effect.fail(new Config.ConfigError(new ConfigProvider.SourceError({ message: "Port must be 1-65535" })))
     )
   )
 
@@ -233,7 +233,7 @@ Override where config is loaded from using `ConfigProvider.layer`:
 ```typescript
 import { ConfigProvider, Effect, Layer } from "effect"
 
-const program = Effect.unit
+const program = Effect.void
 
 const testConfigLayer = ConfigProvider.layer(
   ConfigProvider.fromUnknown({
@@ -243,7 +243,7 @@ const testConfigLayer = ConfigProvider.layer(
 )
 
 const jsonConfigLayer = ConfigProvider.layer(
-  ConfigProvider.fromJson({
+  ConfigProvider.fromUnknown({
     API_KEY: "prod-key",
     PORT: 8080,
   })
@@ -264,9 +264,9 @@ Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
 **Best practice:** Just provide a layer with test values directly. No need for `ConfigProvider.fromMap`:
 
 ```typescript
-import { Config, Effect, Layer, Redacted, ServiceMap } from "effect"
+import { Config, Context, Effect, Layer, Redacted } from "effect"
 
-class ApiConfig extends ServiceMap.Service<
+class ApiConfig extends Context.Service<
   ApiConfig,
   {
     readonly apiKey: Redacted.Redacted
@@ -357,14 +357,14 @@ const program = Effect.gen(function* () {
 ## Example: Database Config Layer
 
 ```typescript
-import { Config, Effect, Layer, Redacted, Schema, ServiceMap } from "effect"
+import { Config, Context, Effect, Layer, Redacted, Schema } from "effect"
 
 const Port = Schema.NumberFromString.pipe(
   Schema.check(Schema.isInt()),
   Schema.check(Schema.isBetween({minimum: 1, maximum: 65535}))
 )
 
-class DatabaseConfig extends ServiceMap.Service<
+class DatabaseConfig extends Context.Service<
   DatabaseConfig,
   {
     readonly host: string

@@ -184,7 +184,7 @@ describe("03-basics", () => {
           return Effect.succeed("ok")
         })
 
-        const retryPolicy = Schedule.exponential("1 millis").pipe(Schedule.compose(Schedule.recurs(3)))
+        const retryPolicy = Schedule.exponential("1 millis").pipe(Schedule.both(Schedule.recurs(3)))
 
         const fiber = yield* flaky.pipe(Effect.retry(retryPolicy), Effect.forkChild)
         yield* TestClock.adjust("100 millis")
@@ -201,7 +201,7 @@ describe("03-basics", () => {
           Effect.as("done"),
           Effect.timeoutOrElse({
             duration: "10 millis",
-            onTimeout: () => Effect.fail("timeout" as const),
+            orElse: () => Effect.fail("timeout" as const),
           }),
         )
 

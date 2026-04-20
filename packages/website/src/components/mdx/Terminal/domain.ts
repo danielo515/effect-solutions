@@ -1,4 +1,4 @@
-import { type Effect, Option, Schema, ServiceMap } from "effect"
+import { Context, type Effect, Option, Schema } from "effect"
 
 // =============================================================================
 // Task Schema & Domain
@@ -24,8 +24,8 @@ export class TaskList extends Schema.Class<TaskList>("TaskList")({
   static empty = new TaskList({ tasks: [] })
 
   get nextId(): TaskId {
-    if (this.tasks.length === 0) return TaskId.makeUnsafe(1)
-    return TaskId.makeUnsafe(Math.max(...this.tasks.map((t) => t.id)) + 1)
+    if (this.tasks.length === 0) return TaskId.make(1)
+    return TaskId.make(Math.max(...this.tasks.map((t) => t.id)) + 1)
   }
 
   add(text: string): [TaskList, Task] {
@@ -49,7 +49,7 @@ export class TaskList extends Schema.Class<TaskList>("TaskList")({
 // TaskRepo Service
 // =============================================================================
 
-export class TaskRepo extends ServiceMap.Service<
+export class TaskRepo extends Context.Service<
   TaskRepo,
   {
     readonly list: (all?: boolean) => Effect.Effect<ReadonlyArray<Task>>

@@ -209,14 +209,14 @@ type UserId = typeof UserId.Type
 const RepoId = Schema.Number.pipe(Schema.brand("RepoId"))
 type RepoId = typeof RepoId.Type
 
-class User extends Schema.Class("User")({
+class User extends Schema.Class<User>("User")({
   id: UserId,
   login: Schema.String,
   name: Schema.NullOr(Schema.String),
   public_repos: Schema.Number,
 }) {}
 
-class Repo extends Schema.Class("Repo")({
+class Repo extends Schema.Class<Repo>("Repo")({
   id: RepoId,
   name: Schema.String,
   full_name: Schema.String,
@@ -229,7 +229,7 @@ class Repo extends Schema.Class("Repo")({
 
 ```typescript
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
-import { Effect, Layer, Schema, ServiceMap } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 
 // hide-start
 const UserId = Schema.Number.pipe(Schema.brand("UserId"))
@@ -238,14 +238,14 @@ type UserId = typeof UserId.Type
 const RepoId = Schema.Number.pipe(Schema.brand("RepoId"))
 type RepoId = typeof RepoId.Type
 
-class User extends Schema.Class("User")({
+class User extends Schema.Class<User>("User")({
   id: UserId,
   login: Schema.String,
   name: Schema.NullOr(Schema.String),
   public_repos: Schema.Number,
 }) {}
 
-class Repo extends Schema.Class("Repo")({
+class Repo extends Schema.Class<Repo>("Repo")({
   id: RepoId,
   name: Schema.String,
   full_name: Schema.String,
@@ -254,12 +254,12 @@ class Repo extends Schema.Class("Repo")({
 }) {}
 // hide-end
 
-class GitHubApi extends ServiceMap.Service<
+class GitHubApi extends Context.Service<
   GitHubApi,
   {
-    readonly getUser: (username: string) => Effect.Effect<User>
-    readonly getRepo: (owner: string, repo: string) => Effect.Effect<Repo>
-    readonly listRepos: (username: string) => Effect.Effect<ReadonlyArray<Repo>>
+    readonly getUser: (username: string) => Effect.Effect<User, unknown>
+    readonly getRepo: (owner: string, repo: string) => Effect.Effect<Repo, unknown>
+    readonly listRepos: (username: string) => Effect.Effect<ReadonlyArray<Repo>, unknown>
   }
 >()("GitHubApi") {
   static layer = Layer.effect(
@@ -297,7 +297,7 @@ class GitHubApi extends ServiceMap.Service<
 
 ```typescript
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
-import { Effect, Layer, Schema, ServiceMap } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 
 // hide-start
 const UserId = Schema.Number.pipe(Schema.brand("UserId"))
@@ -306,14 +306,14 @@ type UserId = typeof UserId.Type
 const RepoId = Schema.Number.pipe(Schema.brand("RepoId"))
 type RepoId = typeof RepoId.Type
 
-class User extends Schema.Class("User")({
+class User extends Schema.Class<User>("User")({
   id: UserId,
   login: Schema.String,
   name: Schema.NullOr(Schema.String),
   public_repos: Schema.Number,
 }) {}
 
-class Repo extends Schema.Class("Repo")({
+class Repo extends Schema.Class<Repo>("Repo")({
   id: RepoId,
   name: Schema.String,
   full_name: Schema.String,
@@ -321,12 +321,12 @@ class Repo extends Schema.Class("Repo")({
   language: Schema.NullOr(Schema.String),
 }) {}
 
-class GitHubApi extends ServiceMap.Service<
+class GitHubApi extends Context.Service<
   GitHubApi,
   {
-    readonly getUser: (username: string) => Effect.Effect<User>
-    readonly getRepo: (owner: string, repo: string) => Effect.Effect<Repo>
-    readonly listRepos: (username: string) => Effect.Effect<ReadonlyArray<Repo>>
+    readonly getUser: (username: string) => Effect.Effect<User, unknown>
+    readonly getRepo: (owner: string, repo: string) => Effect.Effect<Repo, unknown>
+    readonly listRepos: (username: string) => Effect.Effect<ReadonlyArray<Repo>, unknown>
   }
 >()("GitHubApi") {
   static layer = Layer.effect(
@@ -450,7 +450,7 @@ const getRepoWithRetry = Effect.gen(function* () {
   const response = yield* HttpClient.get("https://api.github.com/repos/Effect-TS/effect")
   return yield* HttpClientResponse.schemaBodyJson(Repo)(response)
 }).pipe(
-  Effect.retry(Schedule.exponential("100 millis").pipe(Schedule.compose(Schedule.recurs(3))))
+  Effect.retry(Schedule.exponential("100 millis").pipe(Schedule.both(Schedule.recurs(3))))
 )
 
 getRepoWithRetry.pipe(Effect.provide(FetchHttpClient.layer), Effect.runPromise)

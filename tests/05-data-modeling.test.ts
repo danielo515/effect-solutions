@@ -23,7 +23,7 @@ describe("05-data-modeling", () => {
 
       // Usage
       const user = new User({
-        id: UserId.makeUnsafe("user-123"),
+        id: UserId.make("user-123"),
         name: "Alice",
         email: "alice@example.com",
         createdAt: new Date("2025-01-01T00:00:00.000Z"),
@@ -113,18 +113,15 @@ describe("05-data-modeling", () => {
       const Email = Schema.String.pipe(Schema.brand("Email"))
       type Email = typeof Email.Type
 
-      const Port = Schema.Int.pipe(
-        Schema.check(Schema.isBetween({ minimum: 1, maximum: 65535 })),
-        Schema.brand("Port"),
-      )
+      const Port = Schema.Int.pipe(Schema.check(Schema.isBetween({ minimum: 1, maximum: 65535 })), Schema.brand("Port"))
       // biome-ignore lint/correctness/noUnusedVariables: Used for type annotation
       type Port = typeof Port.Type
 
       // Usage - impossible to mix types
-      const userId = UserId.makeUnsafe("user-123")
-      const _postId = PostId.makeUnsafe("post-456")
-      const email = Email.makeUnsafe("alice@example.com")
-      const port = Port.makeUnsafe(8080)
+      const userId = UserId.make("user-123")
+      const _postId = PostId.make("post-456")
+      const email = Email.make("alice@example.com")
+      const port = Port.make(8080)
 
       function getUser(id: UserId) {
         return id
@@ -152,15 +149,15 @@ describe("05-data-modeling", () => {
         {
           fromUrl(url: string): Option.Option<typeof GitHubUsername.Type> {
             const match = url.match(/github\.com\/([^/]+)/)
-            return match ? Option.some(GitHubUsername.makeUnsafe(match[1])) : Option.none()
+            return match ? Option.some(GitHubUsername.make(match[1])) : Option.none()
           },
           toProfileUrl: (u: typeof GitHubUsername.Type) => `https://github.com/${u}`,
         },
       )
       type GitHubUsername = typeof GitHubUsername.Type
 
-      // .makeUnsafe() works
-      const username = GitHubUsername.makeUnsafe("octocat")
+      // .make() works
+      const username = GitHubUsername.make("octocat")
       strictEqual(username, "octocat")
 
       // Custom methods work
@@ -178,7 +175,7 @@ describe("05-data-modeling", () => {
       // Schema validation still works
       let threw = false
       try {
-        GitHubUsername.makeUnsafe("invalid--username") // double hyphen not allowed
+        GitHubUsername.make("invalid--username") // double hyphen not allowed
       } catch {
         threw = true
       }

@@ -92,11 +92,70 @@ async function main() {
 
   // Shared prelude so snippets can rely on common imports without cluttering docs
   const prelude = `
-/// <reference types="@effect/vitest/globals" />
-import { Effect, Schema, Layer, Config, ConfigError, Console, Option, Match, Redacted, HttpClient, HttpClientResponse, FetchHttpClient } from "effect";
-import { Argument, Command, Flag } from "effect/unstable/cli";
-import { BunRuntime, BunServices } from "@effect/platform-bun";
-export const __prelude = { Effect, Schema, Layer, Config, ConfigError, Console, Option, Match, Redacted, Argument, Command, Flag, HttpClient, HttpClientResponse, FetchHttpClient, BunRuntime, BunServices };
+import { Clock as _Clock, Config as _Config, Console as _Console, Context as _Context, Effect as _Effect, Layer as _Layer, Logger as _Logger, Match as _Match, Option as _Option, Redacted as _Redacted, Schema as _Schema } from "effect";
+import { describe as _describe, expect as _expect, it as _it } from "@effect/vitest";
+import { Argument as _Argument, Command as _Command, Flag as _Flag } from "effect/unstable/cli";
+import { BunRuntime as _BunRuntime, BunServices as _BunServices } from "@effect/platform-bun";
+declare global {
+  const Clock: typeof _Clock;
+  const Config: typeof _Config;
+  const Console: typeof _Console;
+  const Context: typeof _Context;
+  const describe: typeof _describe;
+  const Effect: typeof _Effect;
+  const expect: typeof _expect;
+  const it: typeof _it;
+  const Layer: typeof _Layer;
+  const Logger: typeof _Logger;
+  const Match: typeof _Match;
+  const Redacted: typeof _Redacted;
+  const Schema: typeof _Schema;
+  const Argument: typeof _Argument;
+  const Command: typeof _Command;
+  const Flag: typeof _Flag;
+  const BunRuntime: typeof _BunRuntime;
+  const BunServices: typeof _BunServices;
+}
+Object.assign(globalThis, {
+  Clock: _Clock,
+  Config: _Config,
+  Console: _Console,
+  Context: _Context,
+  describe: _describe,
+  Effect: _Effect,
+  expect: _expect,
+  it: _it,
+  Layer: _Layer,
+  Logger: _Logger,
+  Match: _Match,
+  Redacted: _Redacted,
+  Schema: _Schema,
+  Argument: _Argument,
+  Command: _Command,
+  Flag: _Flag,
+  BunRuntime: _BunRuntime,
+  BunServices: _BunServices,
+});
+export const __prelude = {
+  Clock: _Clock,
+  Config: _Config,
+  Console: _Console,
+  Context: _Context,
+  describe: _describe,
+  Effect: _Effect,
+  expect: _expect,
+  it: _it,
+  Layer: _Layer,
+  Logger: _Logger,
+  Match: _Match,
+  Redacted: _Redacted,
+  Schema: _Schema,
+  Argument: _Argument,
+  Command: _Command,
+  Flag: _Flag,
+  BunRuntime: _BunRuntime,
+  BunServices: _BunServices,
+};
 `
   await writeFile(join(TEMP_DIR, "prelude.ts"), prelude)
 
@@ -118,7 +177,6 @@ export const __prelude = { Effect, Schema, Layer, Config, ConfigError, Console, 
       lib: ["ES2022", "DOM"],
       noEmit: true,
       skipLibCheck: true,
-      types: ["@effect/vitest/globals"],
       // Ensure every snippet is treated as an isolated module
       moduleDetection: "force",
     },

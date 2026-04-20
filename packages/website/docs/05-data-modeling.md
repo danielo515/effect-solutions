@@ -36,7 +36,7 @@ import { Schema } from "effect"
 const UserId = Schema.String.pipe(Schema.brand("UserId"))
 type UserId = typeof UserId.Type
 
-export class User extends Schema.Class("User")({
+export class User extends Schema.Class<User>("User")({
   id: UserId,
   name: Schema.String,
   email: Schema.String,
@@ -50,7 +50,7 @@ export class User extends Schema.Class("User")({
 
 // Usage
 const user = new User({
-  id: UserId.makeUnsafe("user-123"),
+  id: UserId.make("user-123"),
   name: "Alice",
   email: "alice@example.com",
   createdAt: new Date(),
@@ -76,11 +76,11 @@ For structured variants with fields, combine `Schema.TaggedClass` with `Schema.U
 import { Match, Schema } from "effect"
 
 // Define variants with a tag field
-export class Success extends Schema.TaggedClass("Success")("Success", {
+export class Success extends Schema.TaggedClass<Success>("Success")("Success", {
   value: Schema.Number,
 }) {}
 
-export class Failure extends Schema.TaggedClass("Failure")("Failure", {
+export class Failure extends Schema.TaggedClass<Failure>("Failure")("Failure", {
   error: Schema.String,
 }) {}
 
@@ -88,15 +88,16 @@ export class Failure extends Schema.TaggedClass("Failure")("Failure", {
 export const Result = Schema.Union([Success, Failure])
 export type Result = typeof Result.Type
 
-// Pattern match with Match.valueTags
+// Pattern match with Match.value
 const success = new Success({ value: 42 })
 const failure = new Failure({ error: "oops" })
 
 const renderResult = (result: Result) =>
-  Match.valueTags(result, {
-    Success: ({ value }) => `Got: ${value}`,
-    Failure: ({ error }) => `Error: ${error}`,
-  })
+  Match.value(result).pipe(
+    Match.tag("Success", ({ value }) => `Got: ${value}`),
+    Match.tag("Failure", ({ error }) => `Error: ${error}`),
+    Match.exhaustive,
+  )
 
 renderResult(success) // "Got: 42"
 renderResult(failure) // "Error: oops"
@@ -130,9 +131,9 @@ export const Port = Schema.Int.pipe(Schema.check(Schema.isBetween({minimum: 1, m
 export type Port = typeof Port.Type
 
 // Usage - impossible to mix types
-const userId = UserId.makeUnsafe("user-123")
-const postId = PostId.makeUnsafe("post-456")
-const email = Email.makeUnsafe("alice@example.com")
+const userId = UserId.make("user-123")
+const postId = PostId.make("post-456")
+const email = Email.make("alice@example.com")
 
 function getUser(id: UserId) { return id }
 function sendEmail(to: Email) { return to }
@@ -157,12 +158,12 @@ import { Effect, Schema } from "effect"
 const Row = Schema.Literals(["A", "B", "C", "D", "E", "F", "G", "H"])
 const Column = Schema.Literals(["1", "2", "3", "4", "5", "6", "7", "8"])
 
-class Position extends Schema.Class("Position")({
+class Position extends Schema.Class<Position>("Position")({
   row: Row,
   column: Column,
 }) {}
 
-class Move extends Schema.Class("Move")({
+class Move extends Schema.Class<Move>("Move")({
   from: Position,
   to: Position,
 }) {}

@@ -1,9 +1,8 @@
-import { Argument, Command, Flag } from "effect/unstable/cli"
-import { FileSystem } from "effect"
 import { NodeServices } from "@effect/platform-node"
 import { describe, expect, it } from "@effect/vitest"
 // biome-ignore lint/suspicious/noShadowRestrictedNames: Effect convention
-import { Array, Effect, Layer, Option, Schema, ServiceMap } from "effect"
+import { Array, Context, Effect, FileSystem, Layer, Option, Schema } from "effect"
+import { Argument, Command, Flag } from "effect/unstable/cli"
 
 // ============================================================================
 // Task Schema
@@ -29,8 +28,8 @@ class TaskList extends Schema.Class("TaskList")({
   static empty = new TaskList({ tasks: [] })
 
   get nextId(): TaskId {
-    if (this.tasks.length === 0) return TaskId.makeUnsafe(1)
-    return TaskId.makeUnsafe(Math.max(...this.tasks.map((t) => t.id)) + 1)
+    if (this.tasks.length === 0) return TaskId.make(1)
+    return TaskId.make(Math.max(...this.tasks.map((t) => t.id)) + 1)
   }
 
   add(text: string): [TaskList, Task] {
@@ -65,7 +64,7 @@ class TaskList extends Schema.Class("TaskList")({
 // TaskRepo Service
 // ============================================================================
 
-class TaskRepo extends ServiceMap.Service<
+class TaskRepo extends Context.Service<
   TaskRepo,
   {
     readonly list: (all?: boolean) => Effect.Effect<ReadonlyArray<Task>>
@@ -118,7 +117,7 @@ class TaskRepo extends ServiceMap.Service<
 
   static testLayer = Layer.succeed(TaskRepo, {
     list: (_all?) => Effect.succeed([]),
-    add: (text) => Effect.succeed(new Task({ id: TaskId.makeUnsafe(1), text, done: false })),
+    add: (text) => Effect.succeed(new Task({ id: TaskId.make(1), text, done: false })),
     toggle: () => Effect.succeed(Option.none()),
   })
 }
@@ -160,7 +159,7 @@ const _app = Command.make("tasks").pipe(Command.withSubcommands([addCommand, lis
 describe("Domain Model", () => {
   describe("Task", () => {
     it("toggle flips done state", () => {
-      const task = new Task({ id: TaskId.makeUnsafe(1), text: "Test", done: false })
+      const task = new Task({ id: TaskId.make(1), text: "Test", done: false })
       const toggled = task.toggle()
 
       expect(toggled.done).toBe(true)
@@ -172,7 +171,7 @@ describe("Domain Model", () => {
     })
 
     it("toggle works both directions", () => {
-      const task = new Task({ id: TaskId.makeUnsafe(1), text: "Test", done: true })
+      const task = new Task({ id: TaskId.make(1), text: "Test", done: true })
       expect(task.toggle().done).toBe(false)
     })
   })
@@ -183,23 +182,23 @@ describe("Domain Model", () => {
     })
 
     it("nextId returns 1 for empty list", () => {
-      expect(TaskList.empty.nextId).toBe(TaskId.makeUnsafe(1))
+      expect(TaskList.empty.nextId).toBe(TaskId.make(1))
     })
 
     it("nextId returns max + 1", () => {
       const list = new TaskList({
         tasks: [
-          new Task({ id: TaskId.makeUnsafe(5), text: "A", done: false }),
-          new Task({ id: TaskId.makeUnsafe(3), text: "B", done: false }),
+          new Task({ id: TaskId.make(5), text: "A", done: false }),
+          new Task({ id: TaskId.make(3), text: "B", done: false }),
         ],
       })
-      expect(list.nextId).toBe(TaskId.makeUnsafe(6))
+      expect(list.nextId).toBe(TaskId.make(6))
     })
 
     it("add creates task with nextId", () => {
       const [list, task] = TaskList.empty.add("New task")
 
-      expect(task.id).toBe(TaskId.makeUnsafe(1))
+      expect(task.id).toBe(TaskId.make(1))
       expect(task.text).toBe("New task")
       expect(task.done).toBe(false)
       expect(list.tasks).toHaveLength(1)
@@ -209,14 +208,14 @@ describe("Domain Model", () => {
       const [list1, task1] = TaskList.empty.add("First")
       const [list2, task2] = list1.add("Second")
 
-      expect(task1.id).toBe(TaskId.makeUnsafe(1))
-      expect(task2.id).toBe(TaskId.makeUnsafe(2))
+      expect(task1.id).toBe(TaskId.make(1))
+      expect(task2.id).toBe(TaskId.make(2))
       expect(list2.tasks).toHaveLength(2)
     })
 
     it("toggle toggles task by id", () => {
       const [list] = TaskList.empty.add("Task")
-      const [newList, result] = list.toggle(TaskId.makeUnsafe(1))
+      const [newList, result] = list.toggle(TaskId.make(1))
 
       expect(Option.isSome(result)).toBe(true)
       if (Option.isSome(result)) {
@@ -226,13 +225,13 @@ describe("Domain Model", () => {
     })
 
     it("toggle returns none for missing id", () => {
-      const [, result] = TaskList.empty.toggle(TaskId.makeUnsafe(999))
+      const [, result] = TaskList.empty.toggle(TaskId.make(999))
       expect(Option.isNone(result)).toBe(true)
     })
 
     it("find returns task by id", () => {
       const [list] = TaskList.empty.add("Find me")
-      const found = list.find(TaskId.makeUnsafe(1))
+      const found = list.find(TaskId.make(1))
 
       expect(Option.isSome(found)).toBe(true)
       if (Option.isSome(found)) {
@@ -241,12 +240,12 @@ describe("Domain Model", () => {
     })
 
     it("find returns none for missing id", () => {
-      expect(Option.isNone(TaskList.empty.find(TaskId.makeUnsafe(1)))).toBe(true)
+      expect(Option.isNone(TaskList.empty.find(TaskId.make(1)))).toBe(true)
     })
 
     it("pending filters incomplete tasks", () => {
       let [list] = TaskList.empty.add("Done")
-      ;[list] = list.toggle(TaskId.makeUnsafe(1))
+      ;[list] = list.toggle(TaskId.make(1))
       ;[list] = list.add("Not done")
 
       expect(list.pending).toHaveLength(1)
@@ -255,7 +254,7 @@ describe("Domain Model", () => {
 
     it("completed filters done tasks", () => {
       let [list] = TaskList.empty.add("Done")
-      ;[list] = list.toggle(TaskId.makeUnsafe(1))
+      ;[list] = list.toggle(TaskId.make(1))
       ;[list] = list.add("Not done")
 
       expect(list.completed).toHaveLength(1)
@@ -353,7 +352,7 @@ describe("CLI", () => {
     it.effect("toggle returns Option", () =>
       Effect.gen(function* () {
         const repo = yield* TaskRepo
-        const result = yield* repo.toggle(TaskId.makeUnsafe(1))
+        const result = yield* repo.toggle(TaskId.make(1))
         expect(Option.isOption(result)).toBe(true)
       }).pipe(Effect.provide(TaskRepo.testLayer)),
     )
@@ -366,7 +365,12 @@ describe("CLI", () => {
         const tempDir = yield* fs.makeTempDirectoryScoped()
         const path = `${tempDir}/tasks.json`
 
-        const repo = yield* Effect.provide(Effect.gen(function* () { return yield* TaskRepo }), TaskRepo.layer(path).pipe(Layer.provide(NodeServices.layer)))
+        const repo = yield* Effect.provide(
+          Effect.gen(function* () {
+            return yield* TaskRepo
+          }),
+          TaskRepo.layer(path).pipe(Layer.provide(NodeServices.layer)),
+        )
 
         // Initially empty
         const before = yield* repo.list()
@@ -390,7 +394,12 @@ describe("CLI", () => {
         const tempDir = yield* fs.makeTempDirectoryScoped()
         const path = `${tempDir}/tasks.json`
 
-        const repo = yield* Effect.provide(Effect.gen(function* () { return yield* TaskRepo }), TaskRepo.layer(path).pipe(Layer.provide(NodeServices.layer)))
+        const repo = yield* Effect.provide(
+          Effect.gen(function* () {
+            return yield* TaskRepo
+          }),
+          TaskRepo.layer(path).pipe(Layer.provide(NodeServices.layer)),
+        )
 
         // Add and complete
         const task = yield* repo.add("Walk the dog")
@@ -415,13 +424,18 @@ describe("CLI", () => {
 
         // Pre-populate file
         const initial = new TaskList({
-          tasks: [new Task({ id: TaskId.makeUnsafe(1), text: "Existing", done: false })],
+          tasks: [new Task({ id: TaskId.make(1), text: "Existing", done: false })],
         })
         const json = yield* Schema.encodeEffect(TaskList.Json)(initial)
         yield* fs.writeFileString(path, json)
 
         // Load via repo
-        const repo = yield* Effect.provide(Effect.gen(function* () { return yield* TaskRepo }), TaskRepo.layer(path).pipe(Layer.provide(NodeServices.layer)))
+        const repo = yield* Effect.provide(
+          Effect.gen(function* () {
+            return yield* TaskRepo
+          }),
+          TaskRepo.layer(path).pipe(Layer.provide(NodeServices.layer)),
+        )
         const tasks = yield* repo.list()
 
         expect(tasks).toHaveLength(1)

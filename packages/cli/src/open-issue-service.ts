@@ -1,15 +1,15 @@
 import { spawn } from "bun"
-import { Effect, Layer, Schema, ServiceMap } from "effect"
+import { Context, Effect, Layer, Schema } from "effect"
 
 export const OpenIssueCategory = Schema.Literals(["Topic Request", "Fix", "Improvement"])
 export type OpenIssueCategory = typeof OpenIssueCategory.Type
 
-class BrowserOpenError extends Schema.TaggedErrorClass("BrowserOpenError")("BrowserOpenError", {
+class BrowserOpenError extends Schema.TaggedErrorClass<BrowserOpenError>()("BrowserOpenError", {
   url: Schema.String,
   cause: Schema.Defect,
 }) {}
 
-export class BrowserService extends ServiceMap.Service<
+export class BrowserService extends Context.Service<
   BrowserService,
   {
     readonly open: (url: string) => Effect.Effect<void, BrowserOpenError>
@@ -76,7 +76,7 @@ export type OpenIssueResult = {
   issueUrl: string
 }
 
-export class IssueService extends ServiceMap.Service<
+export class IssueService extends Context.Service<
   IssueService,
   {
     readonly open: (input: OpenIssueInput) => Effect.Effect<OpenIssueResult, BrowserOpenError>

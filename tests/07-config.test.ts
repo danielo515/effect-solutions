@@ -1,6 +1,6 @@
 import { describe, it } from "@effect/vitest"
 import { assertSome, assertTrue, strictEqual } from "@effect/vitest/utils"
-import { Config, ConfigProvider, Effect, Layer, Redacted, Schema, ServiceMap } from "effect"
+import { Config, ConfigProvider, Context, Effect, Layer, Redacted, Schema } from "effect"
 
 describe("07-config", () => {
   describe("Basic Config Usage", () => {
@@ -51,7 +51,7 @@ describe("07-config", () => {
   describe("Config Layer Pattern", () => {
     it.effect("creates config service with layer", () =>
       Effect.gen(function* () {
-        class ApiConfig extends ServiceMap.Service<
+        class ApiConfig extends Context.Service<
           ApiConfig,
           {
             readonly apiKey: Redacted.Redacted<string>
@@ -98,7 +98,7 @@ describe("07-config", () => {
 
     it.effect("uses real config with provider", () =>
       Effect.gen(function* () {
-        class DbConfig extends ServiceMap.Service<
+        class DbConfig extends Context.Service<
           DbConfig,
           {
             readonly host: string
@@ -334,7 +334,7 @@ describe("07-config", () => {
   describe("Complex Config Scenarios", () => {
     it.effect("combines multiple config sources", () =>
       Effect.gen(function* () {
-        class AppConfig extends ServiceMap.Service<
+        class AppConfig extends Context.Service<
           AppConfig,
           {
             readonly server: { port: number; host: string }

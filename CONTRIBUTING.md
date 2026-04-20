@@ -23,7 +23,7 @@ This is a living document that intentionally posts "wrong answers" to get better
 1. Fork and clone the repo
 2. Create a feature branch
 3. Make your changes
-4. Run `bun run check` and `bun test`
+4. Run `bun run check` and `bun run test` (`bun run check` applies Biome fixes)
 5. Create a changeset: `bun scripts/changeset-named.ts "description"`
 6. Submit a PR
 
