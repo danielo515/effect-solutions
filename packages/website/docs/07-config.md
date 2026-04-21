@@ -134,7 +134,17 @@ Config.url("API_URL")
 // Durations
 Config.duration("TIMEOUT")
 
-// Arrays (when the provider exposes an actual array node)
+// Env vars are strings, so parse comma-separated values yourself
+Config.string("TAGS").pipe(
+  Config.map((value) =>
+    value
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
+  )
+)
+
+// Structured providers can expose actual arrays
 Config.schema(Schema.Array(Schema.String), "TAGS")
 ```
 

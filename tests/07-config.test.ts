@@ -329,6 +329,47 @@ describe("07-config", () => {
         strictEqual(result, "my-secret")
       }),
     )
+
+    it.effect("parses comma-separated arrays from string config", () =>
+      Effect.gen(function* () {
+        const program = Effect.gen(function* () {
+          return yield* Config.string("TAGS").pipe(
+            Config.map((value) =>
+              value
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter((tag) => tag.length > 0),
+            ),
+          )
+        })
+
+        const testConfig = ConfigProvider.fromUnknown({ TAGS: "docs, effect, , config" })
+
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
+
+        strictEqual(result.length, 3)
+        strictEqual(result[0], "docs")
+        strictEqual(result[1], "effect")
+        strictEqual(result[2], "config")
+      }),
+    )
+
+    it.effect("reads arrays from structured config providers with Config.schema", () =>
+      Effect.gen(function* () {
+        const program = Effect.gen(function* () {
+          return yield* Config.schema(Schema.Array(Schema.String), "TAGS")
+        })
+
+        const testConfig = ConfigProvider.fromUnknown({ TAGS: ["docs", "effect", "config"] })
+
+        const result = yield* program.pipe(Effect.provide(ConfigProvider.layer(testConfig)))
+
+        strictEqual(result.length, 3)
+        strictEqual(result[0], "docs")
+        strictEqual(result[1], "effect")
+        strictEqual(result[2], "config")
+      }),
+    )
   })
 
   describe("Complex Config Scenarios", () => {
