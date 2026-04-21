@@ -1,5 +1,5 @@
 import fs from "node:fs"
-import { BunServices, BunRuntime } from "@effect/platform-bun"
+import { BunRuntime, BunServices } from "@effect/platform-bun"
 import { Console, Effect, Layer } from "effect"
 import { Browser } from "./browser.js"
 import { captureSpec } from "./capture.js"

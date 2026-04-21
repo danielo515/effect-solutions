@@ -1,5 +1,5 @@
-import { Argument, Command, Flag } from "effect/unstable/cli"
 import { Console, Effect, Exit, Layer, Option } from "effect"
+import { Argument, Command, Flag } from "effect/unstable/cli"
 import { TaskId, TaskRepo } from "./domain"
 import { BrowserRuntime, log, MockTerminalLayer, makeMockConsole, TerminalOutput, TerminalOutputLive } from "./services"
 
@@ -43,7 +43,10 @@ const listCommand = Command.make("list", { all: allOption }, ({ all }) =>
 ).pipe(Command.withDescription("List pending tasks"))
 
 // toggle <id>
-const idArg = Argument.integer("id").pipe(Argument.withSchema(TaskId), Argument.withDescription("The task ID to toggle"))
+const idArg = Argument.integer("id").pipe(
+  Argument.withSchema(TaskId),
+  Argument.withDescription("The task ID to toggle"),
+)
 
 const toggleCommand = Command.make("toggle", { id: idArg }, ({ id }) =>
   Effect.gen(function* () {

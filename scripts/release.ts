@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
-import { Command } from "effect/unstable/cli"
 import { BunRuntime, BunServices } from "@effect/platform-bun"
 // biome-ignore lint/suspicious/noShadowRestrictedNames: Effect convention
 import { Array, Effect, FileSystem, pipe, String } from "effect"
+import { Command } from "effect/unstable/cli"
 
 const exec = (cmd: string) => Effect.promise(() => Bun.$`sh -c ${cmd}`.text())
 
