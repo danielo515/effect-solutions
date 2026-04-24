@@ -9,16 +9,16 @@
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-visually-hidden": "^1.2.4",
         "cmdk": "^1.1.1",
-        "effect": "4.0.0-beta.52",
+        "effect": "4.0.0-beta.57",
         "ink": "^6.8.0",
         "next-mdx-remote": "^6.0.0",
       },
       "devDependencies": {
         "@changesets/changelog-github": "^0.6.0",
         "@changesets/cli": "^2.30.0",
-        "@effect/platform-bun": "4.0.0-beta.52",
-        "@effect/platform-node": "4.0.0-beta.52",
-        "@effect/vitest": "4.0.0-beta.52",
+        "@effect/platform-bun": "4.0.0-beta.57",
+        "@effect/platform-node": "4.0.0-beta.57",
+        "@effect/vitest": "4.0.0-beta.57",
         "vitest": "^4.1.0",
       },
     },
@@ -29,8 +29,8 @@
         "effect-solutions": "./bin.js",
       },
       "dependencies": {
-        "@effect/platform-bun": "beta",
-        "effect": "beta",
+        "@effect/platform-bun": "4.0.0-beta.57",
+        "effect": "4.0.0-beta.57",
         "gray-matter": "^4.0.3",
         "picocolors": "^1.1.1",
       },
@@ -45,11 +45,11 @@
       "name": "@effect-best-practices/website",
       "version": "0.5.2",
       "dependencies": {
-        "@effect/platform-browser": "4.0.0-beta.52",
+        "@effect/platform-browser": "4.0.0-beta.57",
         "@phosphor-icons/react": "^2.1.10",
         "@tailwindcss/typography": "^0.5.19",
         "@vercel/analytics": "^2.0.1",
-        "effect": "beta",
+        "effect": "4.0.0-beta.57",
         "motion": "^12.38.0",
         "next": "16.1.7",
         "overlayscrollbars": "^2.14.0",
@@ -60,7 +60,7 @@
       },
       "devDependencies": {
         "@biomejs/biome": "2.4.7",
-        "@effect/platform-bun": "beta",
+        "@effect/platform-bun": "4.0.0-beta.57",
         "@tailwindcss/postcss": "^4.2.1",
         "@types/hast": "^3.0.4",
         "@types/mdast": "^4.0.4",
@@ -175,15 +175,15 @@
 
     "@effect/language-service": ["@effect/language-service@0.80.0", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-dKMATT1fDzaCpNrICpXga7sjJBtFLpKCAoE/1MiGXI8UwcHA9rmAZ2t52JO9g/kJpERWyomkJ+rl+VFlwNIofg=="],
 
-    "@effect/platform-browser": ["@effect/platform-browser@4.0.0-beta.52", "", { "dependencies": { "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^4.0.0-beta.52" } }, "sha512-/5JVgK3NqiRF/8sHhJnzc6QjPxRvsRoe7ZJkH1NitnUXNn0nZHFwTOOM8Vn1Wd1v2SUeOnWbMh3n/FuvvyEtKw=="],
+    "@effect/platform-browser": ["@effect/platform-browser@4.0.0-beta.57", "", { "dependencies": { "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^4.0.0-beta.57" } }, "sha512-bB/6ekUTc+fAympM36hiSROg6jjHLU5zNEpf07oXSqAnZnJL+wGix/8cmY/KPTTIobMXteq0suslrOY1cWZL8Q=="],
 
-    "@effect/platform-bun": ["@effect/platform-bun@4.0.0-beta.52", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.52" }, "peerDependencies": { "effect": "^4.0.0-beta.52" } }, "sha512-Y1+2noV0Qt+tKL2oHQwm536SaPfig/hB0He45VdCphTUdz5OO9VcLZqLEfNRxFwttlJPWpOkm4HvKUQwcj/6TQ=="],
+    "@effect/platform-bun": ["@effect/platform-bun@4.0.0-beta.57", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.57" }, "peerDependencies": { "effect": "^4.0.0-beta.57" } }, "sha512-Z/nG9KLUAPpd4UZXfjjz2giT0W/9iVItbVRJiQ8WReA6n5CEnBsrrE4ioRYOdamq/vRakxWBgqpG/4Mu6Ac7Hg=="],
 
-    "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.52", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.52", "mime": "^4.1.0", "undici": "^8.0.2" }, "peerDependencies": { "effect": "^4.0.0-beta.52", "ioredis": "^5.7.0" } }, "sha512-IFloMd95ot9SACJXPSVG060evsKSnGXlMqwQdyhSmsi7zMwiwbioItw1Up+EK5gJj7m3TRHO6b7fErqVgsN2kQ=="],
+    "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.57", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.57", "mime": "^4.1.0", "undici": "^8.0.2" }, "peerDependencies": { "effect": "^4.0.0-beta.57", "ioredis": "^5.7.0" } }, "sha512-la0xxPSAYOsY0d+uVxEBxok3jYB31iPQmIaZZRUj2SNWqcGGHJc6KorKtI8guqSLuv9FGZ255kBWXRbG6hMeeg=="],
 
-    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.52", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.52" } }, "sha512-f4e0LD/VSlIWBRkjtaJ+zFDRZsdD4Fs3zPhvnkHn+N8qpAJ+HQ00oN5Zye7KJONPEI1JHUt2HwtbHeGCdnBFAw=="],
+    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.57", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.57" } }, "sha512-C976X6f+qHUtLSqcqImuCrjhAHnJV17NC2RvvybsAuDfkyIWU4MyiO2XwgiBeijeNupyr1M/KPKnyjtkNxV9Hw=="],
 
-    "@effect/vitest": ["@effect/vitest@4.0.0-beta.52", "", { "peerDependencies": { "effect": "^4.0.0-beta.52", "vitest": "^3.0.0 || ^4.0.0" } }, "sha512-xFHdZ9iwfbtfsqKEli0ZrowLijosWh3QUnVYvV3gxkWuU2oMfgG/FiA6jw9b2UkdqKA+X9uUFwBALVFK59ncKA=="],
+    "@effect/vitest": ["@effect/vitest@4.0.0-beta.57", "", { "peerDependencies": { "effect": "^4.0.0-beta.57", "vitest": "^3.0.0 || ^4.0.0" } }, "sha512-XyGYv1zisrdP/N8+r4qaegyHZK4WS/1xBGlLPWqEoggBhgW7rD48cGUXDLEP7TlHcIJQiIlHtJlQUIwgVx3zWg=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.7.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-PVtJr5CmLwYAU9PZDMITZoR5iAOShYREoR45EyyLrbntV50mdePTgUn4AmOw90Ifcj+x2kRjdzr1HP3RrNiHGA=="],
 
@@ -735,7 +735,7 @@
 
     "dotenv": ["dotenv@8.6.0", "", {}, "sha512-IrPdXQsk2BbzvCBGBOTmmSH5SodmqZNt4ERAZDmW4CT+tL8VtvinqywuANaFu4bOMWki16nqf0e4oC0QIaDr/g=="],
 
-    "effect": ["effect@4.0.0-beta.52", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.6.0", "find-my-way-ts": "^0.1.6", "ini": "^6.0.0", "kubernetes-types": "^1.30.0", "msgpackr": "^1.11.9", "multipasta": "^0.2.7", "toml": "^4.1.1", "uuid": "^13.0.0", "yaml": "^2.8.3" } }, "sha512-Aa9T5CEV3pCoSDM8sOnalwYieJi5olb7vn8TbgMB3U1YGEOG9ypogng33qMFLKswZM2UimwrXL9Ri1x9Jo9z6w=="],
+    "effect": ["effect@4.0.0-beta.57", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "fast-check": "^4.6.0", "find-my-way-ts": "^0.1.6", "ini": "^6.0.0", "kubernetes-types": "^1.30.0", "msgpackr": "^1.11.9", "multipasta": "^0.2.7", "toml": "^4.1.1", "uuid": "^13.0.0", "yaml": "^2.8.3" } }, "sha512-rg32VgXnLKaPRs9tbRDaZ5jxmzNY7ojXt85gSHGUTwdlbWH5Ik+OCUY2q14TXliygPGoHwCAvNWS4bQJOqf00g=="],
 
     "effect-solutions": ["effect-solutions@workspace:packages/cli"],
 
