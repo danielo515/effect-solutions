@@ -42,6 +42,7 @@ jobs:
         run: npx changeset publish
 
       - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/effect-solutions@')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ github.ref_name }}
