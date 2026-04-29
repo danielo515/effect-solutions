@@ -49,8 +49,7 @@ describe("maybeNotifyUpdate (effect)", () => {
     await mkdir(path.dirname(cachePath(tmpHome)), { recursive: true })
     await writeFile(cachePath(tmpHome), JSON.stringify({ latest: "9.9.9", nextCheck: nextWeek }), "utf8")
 
-    const testConfigLayer = Layer.succeed(
-      UpdateNotifierConfig,
+    const testConfigLayer = Layer.succeed(UpdateNotifierConfig)(
       UpdateNotifierConfig.of({
         checkInterval: 1000 * 60 * 60 * 24,
         timeout: 3000,
@@ -75,8 +74,7 @@ describe("maybeNotifyUpdate (effect)", () => {
     await mkdir(path.dirname(cachePath(tmpHome)), { recursive: true })
     await writeFile(cachePath(tmpHome), JSON.stringify({ latest: "1.0.0", nextCheck: nextWeek }), "utf8")
 
-    const testConfigLayer = Layer.succeed(
-      UpdateNotifierConfig,
+    const testConfigLayer = Layer.succeed(UpdateNotifierConfig)(
       UpdateNotifierConfig.of({
         checkInterval: 1000 * 60 * 60 * 24,
         timeout: 3000,
@@ -101,8 +99,7 @@ describe("maybeNotifyUpdate (effect)", () => {
     await mkdir(path.dirname(cachePath(tmpHome)), { recursive: true })
     await writeFile(cachePath(tmpHome), JSON.stringify({ latest: "9.9.9", nextCheck: nextWeek }), "utf8")
 
-    const testConfigLayer = Layer.succeed(
-      UpdateNotifierConfig,
+    const testConfigLayer = Layer.succeed(UpdateNotifierConfig)(
       UpdateNotifierConfig.of({
         checkInterval: 1000 * 60 * 60 * 24,
         timeout: 3000,
@@ -126,8 +123,7 @@ describe("maybeNotifyUpdate (effect)", () => {
     await mkdir(path.dirname(cachePath(tmpHome)), { recursive: true })
     await writeFile(cachePath(tmpHome), JSON.stringify({ latest: "0.2.4", nextCheck: nextWeek }), "utf8")
 
-    const testConfigLayer = Layer.succeed(
-      UpdateNotifierConfig,
+    const testConfigLayer = Layer.succeed(UpdateNotifierConfig)(
       UpdateNotifierConfig.of({
         checkInterval: 1000 * 60 * 60 * 24,
         timeout: 3000,

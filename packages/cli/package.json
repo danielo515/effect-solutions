@@ -29,8 +29,8 @@
     "bun": ">=1.1.0"
   },
   "dependencies": {
-    "@effect/platform-bun": "4.0.0-beta.57",
-    "effect": "4.0.0-beta.57",
+    "@effect/platform-bun": "4.0.0-beta.59",
+    "effect": "4.0.0-beta.59",
     "gray-matter": "^4.0.3",
     "picocolors": "^1.1.1"
   },

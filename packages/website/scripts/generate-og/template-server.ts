@@ -102,7 +102,7 @@ const acquireServer = Effect.gen(function* () {
 // =============================================================================
 
 export class TemplateServer extends Context.Service<TemplateServer, { readonly baseUrl: string }>()("TemplateServer") {
-  static layer = Layer.effect(TemplateServer, acquireServer.pipe(Effect.map((handle) => ({ baseUrl: handle.baseUrl }))))
+  static layer = Layer.effect(TemplateServer)(acquireServer.pipe(Effect.map((handle) => ({ baseUrl: handle.baseUrl }))))
 
-  static test = (baseUrl: string) => Layer.succeed(TemplateServer, TemplateServer.of({ baseUrl }))
+  static test = (baseUrl: string) => Layer.succeed(TemplateServer)(TemplateServer.of({ baseUrl }))
 }

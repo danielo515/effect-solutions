@@ -229,7 +229,8 @@ class Repo extends Schema.Class<Repo>("Repo")({
 
 ```typescript
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
-import { Context, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 
 // hide-start
 const UserId = Schema.Number.pipe(Schema.brand("UserId"))
@@ -297,7 +298,8 @@ class GitHubApi extends Context.Service<
 
 ```typescript
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
-import { Context, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 
 // hide-start
 const UserId = Schema.Number.pipe(Schema.brand("UserId"))

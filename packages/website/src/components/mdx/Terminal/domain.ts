@@ -24,8 +24,8 @@ export class TaskList extends Schema.Class<TaskList>("TaskList")({
   static empty = new TaskList({ tasks: [] })
 
   get nextId(): TaskId {
-    if (this.tasks.length === 0) return TaskId.make(1)
-    return TaskId.make(Math.max(...this.tasks.map((t) => t.id)) + 1)
+    if (this.tasks.length === 0) return Schema.decodeUnknownSync(TaskId)(1)
+    return Schema.decodeUnknownSync(TaskId)(Math.max(...this.tasks.map((t) => t.id)) + 1)
   }
 
   add(text: string): [TaskList, Task] {

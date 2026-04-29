@@ -18,7 +18,8 @@ A service in Effect is defined using `Context.Service` as a class that declares:
 Services provide contracts without implementation. The actual behavior comes later through Layers.
 
 ```typescript
-import { Context, Effect } from "effect"
+import { Effect } from "effect"
+import * as Context from "effect/Context"
 
 class Database extends Context.Service<
   Database,
@@ -50,7 +51,8 @@ A Layer is an implementation of a service. Layers handle:
 
 ```typescript
 import { HttpClient, HttpClientError, HttpClientResponse } from "effect/unstable/http"
-import { Context, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 
 const UserId = Schema.String.pipe(Schema.brand("UserId"))
 type UserId = typeof UserId.Type
@@ -140,7 +142,8 @@ class Users extends Context.Service<
 Start by sketching leaf service tags (without implementations). This lets you write real TypeScript for higher-level orchestration services that type-checks even though the leaf services aren't runnable yet.
 
 ```typescript
-import { Clock, Context, Effect, Layer, Schema } from "effect"
+import { Clock, Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 
 // Branded types for IDs
 const RegistrationId = Schema.String.pipe(Schema.brand("RegistrationId"))
@@ -259,7 +262,8 @@ See [Testing with Vitest](./08-testing.md#worked-example-testing-a-service) for 
 When designing with services first, create lightweight test implementations. Use `Effect.sync` or `Effect.succeed` when your test doesn't need async operations or effects.
 
 ```typescript
-import { Console, Context, Effect, Layer } from "effect"
+import { Console, Effect, Layer } from "effect"
+import * as Context from "effect/Context"
 
 class Database extends Context.Service<
   Database,
@@ -304,7 +308,8 @@ class Cache extends Context.Service<
 Use `Effect.provide` once at the top of your application to supply all dependencies. Avoid scattering `provide` calls throughout your codebase.
 
 ```typescript
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer } from "effect"
+import * as Context from "effect/Context"
 // hide-start
 class Config extends Context.Service<Config, { readonly apiKey: string }>()("@app/Config") {}
 class Logger extends Context.Service<Logger, { readonly info: (msg: string) => Effect.Effect<void> }>()("@app/Logger") {}
@@ -353,7 +358,8 @@ This matters especially for resource-intensive layers like database connection p
 ```typescript
 import { Layer } from "effect"
 // hide-start
-import { Context, Effect } from "effect"
+import { Effect } from "effect"
+import * as Context from "effect/Context"
 class SqlClient extends Context.Service<SqlClient, { readonly query: (sql: string) => Effect.Effect<unknown[]> }>()("@app/SqlClient") {}
 class Postgres { static layer(_: { readonly url: string; readonly poolSize: number }): Layer.Layer<SqlClient> { return Layer.succeed(SqlClient, { query: () => Effect.succeed([]) }) } }
 class UserRepo extends Context.Service<UserRepo, {}>()("@app/UserRepo") {
@@ -381,7 +387,8 @@ const badAppLayer = Layer.merge(
 ```typescript
 import { Layer } from "effect"
 // hide-start
-import { Context, Effect } from "effect"
+import { Effect } from "effect"
+import * as Context from "effect/Context"
 class SqlClient extends Context.Service<SqlClient, { readonly query: (sql: string) => Effect.Effect<unknown[]> }>()("@app/SqlClient") {}
 class Postgres { static layer(_: { readonly url: string; readonly poolSize: number }): Layer.Layer<SqlClient> { return Layer.succeed(SqlClient, { query: () => Effect.succeed([]) }) } }
 class UserRepo extends Context.Service<UserRepo, {}>()("@app/UserRepo") {
@@ -420,7 +427,8 @@ Per-test layering (preferred):
 
 ```typescript
 import { expect, it } from "@effect/vitest"
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer } from "effect"
+import * as Context from "effect/Context"
 
 class Counter extends Context.Service<
   Counter,
@@ -456,7 +464,8 @@ Suite-shared layering (only when you know you need it):
 
 ```typescript
 import { expect, it } from "@effect/vitest"
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer } from "effect"
+import * as Context from "effect/Context"
 
 class Counter extends Context.Service<
   Counter,

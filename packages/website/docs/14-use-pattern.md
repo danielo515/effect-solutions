@@ -24,7 +24,8 @@ For libraries with only a few methods, consider wrapping each method individuall
 ## The pattern
 
 ```typescript
-import { Context, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 import * as fs_ from "node:fs/promises"
 
 class FileSystemError extends Schema.TaggedErrorClass<FileSystemError>()(
@@ -65,7 +66,8 @@ The service exposes a single `use` method that:
 ```typescript
 import { Effect, pipe } from "effect"
 // hide-start
-import { Context, Layer, Schema } from "effect"
+import { Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 import * as fs_ from "node:fs/promises"
 class FileSystemError extends Schema.TaggedErrorClass<FileSystemError>()(
   "FileSystemError",
@@ -120,7 +122,8 @@ When the Effect is interrupted, the signal is aborted, allowing operations that 
 For frequently used operations, add typed methods alongside `use`:
 
 ```typescript
-import { Context, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 import * as fs_ from "node:fs/promises"
 
 class FileSystemError extends Schema.TaggedErrorClass<FileSystemError>()(
@@ -177,7 +180,8 @@ You could expose the underlying client directly, but the callback approach provi
 If you prefer direct access, you can expose both:
 
 ```typescript
-import { Context, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 import * as fs_ from "node:fs/promises"
 
 class FileSystemError extends Schema.TaggedErrorClass<FileSystemError>()(
@@ -214,7 +218,8 @@ The trade-off is direct client access loses automatic error wrapping and interru
 Create a test layer that uses in-memory storage:
 
 ```typescript
-import { Context, Effect, Layer, Schema } from "effect"
+import { Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 import * as fs_ from "node:fs/promises"
 
 class FileSystemError extends Schema.TaggedErrorClass<FileSystemError>()(

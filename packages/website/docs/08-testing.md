@@ -167,7 +167,8 @@ it.effect("time-based test", () =>
 Use `Effect.provide()` inline for test-specific layers:
 
 ```typescript
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer } from "effect"
+import * as Context from "effect/Context"
 
 class Database extends Context.Service<
   Database,
@@ -255,7 +256,8 @@ Here's a complete example testing the `Events` service from the [Services & Laye
 First, define domain types and services with test layers built-in:
 
 ```typescript
-import { Clock, Context, Effect, Layer, Option, Schema } from "effect"
+import { Clock, Effect, Layer, Option, Schema } from "effect"
+import * as Context from "effect/Context"
 import { describe, expect, it } from "@effect/vitest"
 
 // Domain types
@@ -369,7 +371,8 @@ class Emails extends Context.Service<
 The Events service orchestrates the leaf services:
 
 ```typescript
-import { Clock, Context, Effect, Layer, Schema } from "effect"
+import { Clock, Effect, Layer, Schema } from "effect"
+import * as Context from "effect/Context"
 // hide-start
 const RegistrationId = Schema.String.pipe(Schema.brand("RegistrationId"))
 type RegistrationId = typeof RegistrationId.Type
@@ -435,7 +438,8 @@ Compose test layers and write tests:
 
 ```typescript
 import { describe, expect, it } from "@effect/vitest"
-import { Clock, Context, Effect, Layer, Option, Schema } from "effect"
+import { Clock, Effect, Layer, Option, Schema } from "effect"
+import * as Context from "effect/Context"
 // hide-start
 const RegistrationId = Schema.String.pipe(Schema.brand("RegistrationId"))
 type RegistrationId = typeof RegistrationId.Type

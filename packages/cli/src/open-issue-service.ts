@@ -15,7 +15,7 @@ export class BrowserService extends Context.Service<
     readonly open: (url: string) => Effect.Effect<void, BrowserOpenError>
   }
 >()("@cli/BrowserService") {
-  static readonly layer = Layer.sync(BrowserService, () => {
+  static readonly layer = Layer.sync(BrowserService)(() => {
     const open = Effect.fn("BrowserService.open")((url: string) =>
       Effect.try({
         try: () => {
@@ -47,7 +47,7 @@ export class BrowserService extends Context.Service<
     return BrowserService.of({ open })
   })
 
-  static readonly testLayer = Layer.sync(BrowserService, () => {
+  static readonly testLayer = Layer.sync(BrowserService)(() => {
     const urls: string[] = []
 
     const open = Effect.fn("BrowserService.open.test")((url: string) =>
@@ -59,7 +59,7 @@ export class BrowserService extends Context.Service<
     return BrowserService.of({ open })
   })
 
-  static readonly noopLayer = Layer.sync(BrowserService, () => {
+  static readonly noopLayer = Layer.sync(BrowserService)(() => {
     const open = Effect.fn("BrowserService.open.noop")((_url: string) => Effect.void)
 
     return BrowserService.of({ open })
@@ -82,8 +82,7 @@ export class IssueService extends Context.Service<
     readonly open: (input: OpenIssueInput) => Effect.Effect<OpenIssueResult, BrowserOpenError>
   }
 >()("@cli/IssueService") {
-  static readonly layer = Layer.effect(
-    IssueService,
+  static readonly layer = Layer.effect(IssueService)(
     Effect.gen(function* () {
       const browser = yield* BrowserService
 

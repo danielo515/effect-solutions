@@ -207,7 +207,8 @@ class TaskList extends Schema.Class<TaskList>("TaskList")({
 ### The TaskRepo Service
 
 ```typescript
-import { Array, Context, Effect, FileSystem, Layer, Option, Schema } from "effect"
+import { Array, Effect, FileSystem, Layer, Option, Schema } from "effect"
+import * as Context from "effect/Context"
 // hide-start
 const TaskId = Schema.Number.pipe(Schema.brand("TaskId"))
 type TaskId = typeof TaskId.Type
@@ -312,7 +313,8 @@ class TaskRepo extends Context.Service<
 
 ```typescript
 import { Argument, Command, Flag } from "effect/unstable/cli"
-import { Console, Context, Effect, Option, Schema } from "effect"
+import { Console, Effect, Option, Schema } from "effect"
+import * as Context from "effect/Context"
 
 // hide-start
 // Minimal stubs to keep this example self-contained for typechecking
@@ -405,7 +407,8 @@ const app = Command.make("tasks", {}).pipe(
 ```typescript
 import { BunServices, BunRuntime } from "@effect/platform-bun"
 import { Command } from "effect/unstable/cli"
-import { Context, Effect, Layer } from "effect"
+import { Effect, Layer } from "effect"
+import * as Context from "effect/Context"
 
 // hide-start
 const app = Command.make("tasks")

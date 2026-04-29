@@ -67,7 +67,8 @@ Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
 **Best practice:** Create a config service with a `layer` export:
 
 ```typescript
-import { Config, Context, Effect, Layer, Redacted } from "effect"
+import { Config, Effect, Layer, Redacted } from "effect"
+import * as Context from "effect/Context"
 
 class ApiConfig extends Context.Service<
   ApiConfig,
@@ -274,7 +275,8 @@ Effect.runPromise(program.pipe(Effect.provide(testConfigLayer)))
 **Best practice:** Just provide a layer with test values directly. No need for `ConfigProvider.fromMap`:
 
 ```typescript
-import { Config, Context, Effect, Layer, Redacted } from "effect"
+import { Config, Effect, Layer, Redacted } from "effect"
+import * as Context from "effect/Context"
 
 class ApiConfig extends Context.Service<
   ApiConfig,
@@ -367,7 +369,8 @@ const program = Effect.gen(function* () {
 ## Example: Database Config Layer
 
 ```typescript
-import { Config, Context, Effect, Layer, Redacted, Schema } from "effect"
+import { Config, Effect, Layer, Redacted, Schema } from "effect"
+import * as Context from "effect/Context"
 
 const Port = Schema.NumberFromString.pipe(
   Schema.check(Schema.isInt()),

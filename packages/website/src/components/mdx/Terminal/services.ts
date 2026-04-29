@@ -8,7 +8,7 @@ import {
   ManagedRuntime,
   Option,
   Path,
-  Ref,
+  Schema,
   Stdio,
   Terminal,
 } from "effect"
@@ -26,20 +26,19 @@ const INITIALIZED_KEY = "effect-solutions-tasks-initialized"
 const DEFAULT_TASKS = new TaskList({
   tasks: [
     new Task({
-      id: TaskId.make(1),
+      id: Schema.decodeUnknownSync(TaskId)(1),
       text: "Run the agent-guided setup",
       done: false,
     }),
     new Task({
-      id: TaskId.make(2),
+      id: Schema.decodeUnknownSync(TaskId)(2),
       text: "Become effect-pilled",
       done: false,
     }),
   ],
 })
 
-const browserTaskRepoLayer = Layer.effect(
-  TaskRepo,
+const browserTaskRepoLayer = Layer.effect(TaskRepo)(
   Effect.gen(function* () {
     const kv = KeyValueStore.toSchemaStore(yield* KeyValueStore.KeyValueStore, TaskList)
 
@@ -93,7 +92,7 @@ export class TerminalOutput extends Context.Service<
   }
 >()("TerminalOutput") {}
 
-export const TerminalOutputLive = Layer.sync(TerminalOutput, () => {
+export const TerminalOutputLive = Layer.sync(TerminalOutput)(() => {
   const lines: string[] = []
   return TerminalOutput.of({
     log: (...args) =>
@@ -119,8 +118,7 @@ export const log = (...args: ReadonlyArray<unknown>) =>
 // =============================================================================
 
 // Terminal mock - display goes to our TerminalOutput accumulator
-export const MockTerminalLayer = Layer.effect(
-  Terminal.Terminal,
+export const MockTerminalLayer = Layer.effect(Terminal.Terminal)(
   Effect.gen(function* () {
     const output = yield* TerminalOutput
     return Terminal.make({
@@ -140,8 +138,8 @@ const noop = () => {}
 export const makeMockConsole = Effect.gen(function* () {
   const output = yield* TerminalOutput
   return {
-    log: (...args: any[]) => output.logSync(...args),
-    error: (...args: any[]) => output.logSync(...args),
+    log: (...args: ReadonlyArray<unknown>) => output.logSync(...args),
+    error: (...args: ReadonlyArray<unknown>) => output.logSync(...args),
     assert: noop,
     clear: noop,
     count: noop,
@@ -170,8 +168,7 @@ const mockPathLayer = Path.layer
 
 // Stub layers for CLI Environment requirements not needed in browser
 const mockStdioLayer = Stdio.layerTest({})
-const mockSpawnerLayer = Layer.succeed(
-  ChildProcessSpawner.ChildProcessSpawner,
+const mockSpawnerLayer = Layer.succeed(ChildProcessSpawner.ChildProcessSpawner)(
   ChildProcessSpawner.make(() => Effect.die("ChildProcessSpawner not available in browser")),
 )
 

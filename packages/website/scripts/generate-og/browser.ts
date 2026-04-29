@@ -7,8 +7,7 @@ import { chromium } from "playwright"
 // =============================================================================
 
 export class Browser extends Context.Service<Browser, PlaywrightBrowser>()("Browser") {
-  static layer = Layer.effect(
-    Browser,
+  static layer = Layer.effect(Browser)(
     Effect.acquireRelease(
       Effect.tryPromise({
         try: () => chromium.launch(),
@@ -18,5 +17,5 @@ export class Browser extends Context.Service<Browser, PlaywrightBrowser>()("Brow
     ),
   )
 
-  static test = Layer.succeed(Browser, null as unknown as PlaywrightBrowser)
+  static test = Layer.succeed(Browser)(null as unknown as PlaywrightBrowser)
 }

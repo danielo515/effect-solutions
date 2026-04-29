@@ -19,8 +19,7 @@ export class UpdateNotifier extends Context.Service<
     readonly check: (pkgName: string, currentVersion: string) => Effect.Effect<void, UpdateCheckError>
   }
 >()("@cli/UpdateNotifier") {
-  static readonly layer = Layer.effect(
-    UpdateNotifier,
+  static readonly layer = Layer.effect(UpdateNotifier)(
     Effect.gen(function* () {
       const config = yield* UpdateNotifierConfig
 
@@ -127,8 +126,7 @@ export class UpdateNotifier extends Context.Service<
     }),
   )
 
-  static readonly testLayer = Layer.succeed(
-    UpdateNotifier,
+  static readonly testLayer = Layer.succeed(UpdateNotifier)(
     UpdateNotifier.of({
       check: (_pkgName, _currentVersion) => Effect.void,
     }),
@@ -144,7 +142,7 @@ export class UpdateNotifierConfig extends Context.Service<
     readonly homeDir: string
   }
 >()("@cli/UpdateNotifierConfig") {
-  static readonly layer = Layer.sync(UpdateNotifierConfig, () => {
+  static readonly layer = Layer.sync(UpdateNotifierConfig)(() => {
     const isCi = Boolean(process.env.CI || process.env.NODE_ENV === "test")
     const homeDir = process.env.HOME ?? os.homedir()
     const checkInterval = 1000 * 60 * 60 * 24 // daily
@@ -158,8 +156,7 @@ export class UpdateNotifierConfig extends Context.Service<
     })
   })
 
-  static readonly testLayer = Layer.succeed(
-    UpdateNotifierConfig,
+  static readonly testLayer = Layer.succeed(UpdateNotifierConfig)(
     UpdateNotifierConfig.of({
       checkInterval: 100,
       timeout: 100,
