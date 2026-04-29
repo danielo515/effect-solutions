@@ -1,6 +1,6 @@
 import { describe, it } from "@effect/vitest"
 import { assertTrue, strictEqual } from "@effect/vitest/utils"
-import { Effect, Layer, pipe, Result, Schema, ServiceMap } from "effect"
+import { Context, Effect, Layer, pipe, Result, Schema } from "effect"
 
 describe("14-use-pattern", () => {
   class FileSystemError extends Schema.TaggedErrorClass("FileSystemError")("FileSystemError", {
@@ -32,7 +32,7 @@ describe("14-use-pattern", () => {
     } satisfies MockFs
   }
 
-  class FileSystem extends ServiceMap.Service<
+  class FileSystem extends Context.Service<
     FileSystem,
     {
       readonly use: <A>(fn: (fs: MockFs, signal: AbortSignal) => Promise<A>) => Effect.Effect<A, FileSystemError>

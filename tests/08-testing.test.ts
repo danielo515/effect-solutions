@@ -1,7 +1,6 @@
-import { FileSystem } from "effect"
 import { NodeFileSystem } from "@effect/platform-node"
 import { describe, expect, it } from "@effect/vitest"
-import { Clock, Effect, Layer, Option, Schema, ServiceMap } from "effect"
+import { Clock, Context, Effect, FileSystem, Layer, Option, Schema } from "effect"
 
 describe("11-testing-with-vitest", () => {
   describe("Basic Testing", () => {
@@ -37,10 +36,9 @@ describe("11-testing-with-vitest", () => {
   })
 
   describe("Providing Layers", () => {
-    class Database extends ServiceMap.Service<
-      Database,
-      { query: (sql: string) => Effect.Effect<string[]> }
-    >()("Database") {}
+    class Database extends Context.Service<Database, { query: (sql: string) => Effect.Effect<string[]> }>()(
+      "Database",
+    ) {}
 
     const testDatabase = Layer.succeed(Database, {
       query: (_sql) => Effect.succeed(["mock", "data"]),
@@ -119,7 +117,7 @@ class UserNotFound extends Schema.TaggedErrorClass("UserNotFound")("UserNotFound
 }) {}
 
 // Users service with test layer that has create + findById
-class Users extends ServiceMap.Service<
+class Users extends Context.Service<
   Users,
   {
     readonly create: (user: User) => Effect.Effect<void>
@@ -144,7 +142,7 @@ class Users extends ServiceMap.Service<
 }
 
 // Tickets service with test layer
-class Tickets extends ServiceMap.Service<
+class Tickets extends Context.Service<
   Tickets,
   {
     readonly issue: (eventId: EventId, userId: UserId) => Effect.Effect<Ticket>
@@ -154,12 +152,13 @@ class Tickets extends ServiceMap.Service<
     let counter = 0
 
     const issue = (eventId: EventId, _userId: UserId) =>
-      Effect.sync(() =>
-        new Ticket({
-          id: TicketId.makeUnsafe(`ticket-${counter++}`),
-          eventId,
-          code: `CODE-${counter}`,
-        }),
+      Effect.sync(
+        () =>
+          new Ticket({
+            id: TicketId.make(`ticket-${counter++}`),
+            eventId,
+            code: `CODE-${counter}`,
+          }),
       )
 
     return { issue }
@@ -167,7 +166,7 @@ class Tickets extends ServiceMap.Service<
 }
 
 // Emails service with test layer that tracks sent emails
-class Emails extends ServiceMap.Service<
+class Emails extends Context.Service<
   Emails,
   {
     readonly send: (email: Email) => Effect.Effect<void>
@@ -186,7 +185,7 @@ class Emails extends ServiceMap.Service<
 }
 
 // Events service orchestrates leaf services
-class Events extends ServiceMap.Service<
+class Events extends Context.Service<
   Events,
   {
     readonly register: (eventId: EventId, userId: UserId) => Effect.Effect<Registration, UserNotFound>
@@ -205,7 +204,7 @@ class Events extends ServiceMap.Service<
         const now = yield* Clock.currentTimeMillis
 
         const registration = new Registration({
-          id: RegistrationId.makeUnsafe(crypto.randomUUID()),
+          id: RegistrationId.make(crypto.randomUUID()),
           eventId,
           userId,
           ticketId: ticket.id,
@@ -243,14 +242,14 @@ describe("Events.register", () => {
 
       // Arrange: create a user
       const user = new User({
-        id: UserId.makeUnsafe("user-123"),
+        id: UserId.make("user-123"),
         name: "Alice",
         email: "alice@example.com",
       })
       yield* users.create(user)
 
       // Act
-      const eventId = EventId.makeUnsafe("event-789")
+      const eventId = EventId.make("event-789")
       const registration = yield* events.register(eventId, user.id)
 
       // Assert
@@ -267,14 +266,14 @@ describe("Events.register", () => {
 
       // Arrange
       const user = new User({
-        id: UserId.makeUnsafe("user-456"),
+        id: UserId.make("user-456"),
         name: "Bob",
         email: "bob@example.com",
       })
       yield* users.create(user)
 
       // Act
-      yield* events.register(EventId.makeUnsafe("event-789"), user.id)
+      yield* events.register(EventId.make("event-789"), user.id)
 
       // Assert: check sent emails
       const sentEmails = yield* emails.sent

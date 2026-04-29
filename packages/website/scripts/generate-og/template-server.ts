@@ -1,12 +1,7 @@
 import net from "node:net"
+import { Console, Context, Effect, Layer, Schedule, Stream } from "effect"
+import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
 import { ChildProcess } from "effect/unstable/process"
-import {
-  FetchHttpClient,
-  HttpClient,
-  HttpClientRequest,
-  HttpClientResponse,
-} from "effect/unstable/http"
-import { Console, Effect, Layer, Schedule, ServiceMap, Stream } from "effect"
 import { getBaseUrl, NEXT_CACHE_DIR, TEMPLATE_ROUTE } from "./config.js"
 
 // =============================================================================
@@ -106,9 +101,7 @@ const acquireServer = Effect.gen(function* () {
 // Template Server Service
 // =============================================================================
 
-export class TemplateServer extends ServiceMap.Service<TemplateServer, { readonly baseUrl: string }>()(
-  "TemplateServer",
-) {
+export class TemplateServer extends Context.Service<TemplateServer, { readonly baseUrl: string }>()("TemplateServer") {
   static layer = Layer.effect(TemplateServer, acquireServer.pipe(Effect.map((handle) => ({ baseUrl: handle.baseUrl }))))
 
   static test = (baseUrl: string) => Layer.succeed(TemplateServer, TemplateServer.of({ baseUrl }))

@@ -1,4 +1,4 @@
-import { Console, Effect, Layer, ServiceMap } from "effect"
+import { Console, Context, Effect, Layer } from "effect"
 import type { Browser as PlaywrightBrowser } from "playwright"
 import { chromium } from "playwright"
 
@@ -6,7 +6,7 @@ import { chromium } from "playwright"
 // Browser Service
 // =============================================================================
 
-export class Browser extends ServiceMap.Service<Browser, PlaywrightBrowser>()("Browser") {
+export class Browser extends Context.Service<Browser, PlaywrightBrowser>()("Browser") {
   static layer = Layer.effect(
     Browser,
     Effect.acquireRelease(

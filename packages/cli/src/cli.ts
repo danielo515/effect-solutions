@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { Argument, Command as CliCommand, Flag } from "effect/unstable/cli"
 import { BunRuntime, BunServices } from "@effect/platform-bun"
 import { Console, Effect, Layer, Option, pipe } from "effect"
+import { Argument, Command as CliCommand, Flag } from "effect/unstable/cli"
 import pc from "picocolors"
 import pkg from "../package.json" with { type: "json" }
 import { DOC_LOOKUP, DOCS } from "./docs-manifest"
@@ -133,10 +133,7 @@ const openIssueCommand = CliCommand.make("open-issue", {
     Flag.optional,
   ),
   title: Flag.string("title").pipe(Flag.withDescription("Brief issue title"), Flag.optional),
-  description: Flag.string("description").pipe(
-    Flag.withDescription("Detailed issue description"),
-    Flag.optional,
-  ),
+  description: Flag.string("description").pipe(Flag.withDescription("Detailed issue description"), Flag.optional),
 }).pipe(
   CliCommand.withDescription("Open a pre-filled GitHub issue in the effect-solutions repo"),
   CliCommand.withHandler(({ category, title, description }) =>

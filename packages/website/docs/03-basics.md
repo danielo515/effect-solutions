@@ -91,7 +91,7 @@ declare const fetchData: Effect.Effect<string>
 
 const program = fetchData.pipe(
   Effect.timeout("5 seconds"),
-  Effect.retry(Schedule.exponential("100 millis").pipe(Schedule.compose(Schedule.recurs(3)))),
+  Effect.retry(Schedule.exponential("100 millis").pipe(Schedule.both(Schedule.recurs(3)))),
   Effect.tap((data) => Effect.logInfo(`Fetched: ${data}`)),
   Effect.withSpan("fetchData")
 )
@@ -116,7 +116,7 @@ declare const callExternalApi: Effect.Effect<string>
 
 // Retry with exponential backoff, max 3 attempts
 const retryPolicy = Schedule.exponential("100 millis").pipe(
-  Schedule.compose(Schedule.recurs(3))
+  Schedule.both(Schedule.recurs(3))
 )
 
 const resilientCall = callExternalApi.pipe(
@@ -134,4 +134,4 @@ const resilientCall = callExternalApi.pipe(
 - `Schedule.exponential` - exponential backoff
 - `Schedule.recurs` - limit number of retries
 - `Schedule.spaced` - fixed delay between retries
-- `Schedule.compose` - combine schedules (both must continue)
+- `Schedule.both` - combine schedules (both must continue)

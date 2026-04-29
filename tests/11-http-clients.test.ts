@@ -1,17 +1,7 @@
-import {
-  FetchHttpClient,
-  HttpClient,
-  HttpClientRequest,
-  HttpClientResponse,
-} from "effect/unstable/http"
-import {
-  HttpApi,
-  HttpApiClient,
-  HttpApiEndpoint,
-  HttpApiGroup,
-} from "effect/unstable/httpapi"
 import { describe, expect, it } from "@effect/vitest"
-import { Effect, flow, Layer, Schema, ServiceMap } from "effect"
+import { Context, Effect, flow, Layer, Schema } from "effect"
+import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
+import { HttpApi, HttpApiClient, HttpApiEndpoint, HttpApiGroup } from "effect/unstable/httpapi"
 
 // ============================================================================
 // Schemas
@@ -42,7 +32,7 @@ class Repo extends Schema.Class("Repo")({
 // API Service
 // ============================================================================
 
-class GitHubApi extends ServiceMap.Service<
+class GitHubApi extends Context.Service<
   GitHubApi,
   {
     readonly getUser: (username: string) => Effect.Effect<User, unknown>
@@ -82,25 +72,23 @@ class GitHubApi extends ServiceMap.Service<
 // HttpApi Definition
 // ============================================================================
 
-const UsersApi = HttpApiGroup.make("users")
-  .add(
-    HttpApiEndpoint.get("getUser", "/users/:username", {
-      params: { username: Schema.String },
-      success: User,
-    }),
-    HttpApiEndpoint.get("listRepos", "/users/:username/repos", {
-      params: { username: Schema.String },
-      success: Schema.Array(Repo),
-    }),
-  )
+const UsersApi = HttpApiGroup.make("users").add(
+  HttpApiEndpoint.get("getUser", "/users/:username", {
+    params: { username: Schema.String },
+    success: User,
+  }),
+  HttpApiEndpoint.get("listRepos", "/users/:username/repos", {
+    params: { username: Schema.String },
+    success: Schema.Array(Repo),
+  }),
+)
 
-const ReposApi = HttpApiGroup.make("repos")
-  .add(
-    HttpApiEndpoint.get("getRepo", "/repos/:owner/:repo", {
-      params: { owner: Schema.String, repo: Schema.String },
-      success: Repo,
-    }),
-  )
+const ReposApi = HttpApiGroup.make("repos").add(
+  HttpApiEndpoint.get("getRepo", "/repos/:owner/:repo", {
+    params: { owner: Schema.String, repo: Schema.String },
+    success: Repo,
+  }),
+)
 
 const GitHubHttpApi = HttpApi.make("github-api").add(UsersApi).add(ReposApi)
 

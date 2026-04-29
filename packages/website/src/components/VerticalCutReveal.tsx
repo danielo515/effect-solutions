@@ -33,6 +33,18 @@ interface WordObject {
   needsSpace: boolean
 }
 
+interface RenderCharacter {
+  key: string
+  position: number
+  value: string
+}
+
+interface RenderWord {
+  characters: RenderCharacter[]
+  key: string
+  needsSpace: boolean
+}
+
 const CHARACTER_MOTION_STYLE = {
   willChange: "transform",
 } as const
@@ -147,6 +159,41 @@ const VerticalCutReveal = forwardRef<VerticalCutRevealRef, TextProps>(
     }
 
     const Component = onClick ? "button" : "span"
+    const renderWords = useMemo<RenderWord[]>(() => {
+      const words =
+        splitBy === "characters"
+          ? (elements as WordObject[])
+          : (elements as string[]).map((el, i) => ({
+              characters: [el],
+              needsSpace: i !== elements.length - 1,
+            }))
+
+      let absolutePosition = 0
+
+      return words.map((word) => {
+        const start = absolutePosition
+        const characters = word.characters.map((char) => {
+          const position = absolutePosition
+          absolutePosition += 1
+
+          return {
+            key: `char-${position}-${char}`,
+            position,
+            value: char,
+          }
+        })
+
+        if (word.needsSpace) {
+          absolutePosition += 1
+        }
+
+        return {
+          characters,
+          key: `word-${start}-${word.characters.join("")}`,
+          needsSpace: word.needsSpace,
+        }
+      })
+    }, [elements, splitBy])
 
     return (
       <Component
@@ -157,28 +204,17 @@ const VerticalCutReveal = forwardRef<VerticalCutRevealRef, TextProps>(
       >
         <span className="sr-only">{text}</span>
 
-        {(splitBy === "characters"
-          ? (elements as WordObject[])
-          : (elements as string[]).map((el, i) => ({
-              characters: [el],
-              needsSpace: i !== elements.length - 1,
-            }))
-        ).map((wordObj, wordIndex, array) => {
-          const previousCharsCount = array.slice(0, wordIndex).reduce((sum, word) => sum + word.characters.length, 0)
-
+        {renderWords.map((wordObj, wordIndex, array) => {
           return (
             <span
-              key={`word-${wordIndex}-${wordObj.characters.join("")}`}
+              key={wordObj.key}
               aria-hidden="true"
               className={cn("inline-flex overflow-hidden", wordLevelClassName)}
             >
               {wordObj.characters.map((char, charIndex) => (
-                <span
-                  className={cn(elementLevelClassName, "relative")}
-                  key={`char-${previousCharsCount + charIndex}-${char}`}
-                >
+                <span className={cn(elementLevelClassName, "relative")} key={char.key}>
                   <motion.span
-                    custom={previousCharsCount + charIndex}
+                    custom={char.position}
                     initial="hidden"
                     animate="visible"
                     exit="exit"
@@ -189,7 +225,7 @@ const VerticalCutReveal = forwardRef<VerticalCutRevealRef, TextProps>(
                     style={CHARACTER_MOTION_STYLE}
                     className="inline-block"
                   >
-                    {char === " " ? "\u00A0" : char}
+                    {char.value === " " ? "\u00A0" : char.value}
                   </motion.span>
                 </span>
               ))}

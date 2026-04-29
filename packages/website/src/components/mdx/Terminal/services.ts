@@ -1,9 +1,19 @@
-import { KeyValueStore } from "effect/unstable/persistence"
-import { Terminal, Stdio } from "effect"
-import { FileSystem, Path } from "effect"
-import { ChildProcessSpawner } from "effect/unstable/process"
 import { BrowserKeyValueStore } from "@effect/platform-browser"
-import { Console, Effect, Layer, ManagedRuntime, Option, Ref, ServiceMap } from "effect"
+import {
+  type Console,
+  Context,
+  Effect,
+  FileSystem,
+  Layer,
+  ManagedRuntime,
+  Option,
+  Path,
+  Ref,
+  Stdio,
+  Terminal,
+} from "effect"
+import { KeyValueStore } from "effect/unstable/persistence"
+import { ChildProcessSpawner } from "effect/unstable/process"
 import { Task, TaskId, TaskList, TaskRepo } from "./domain"
 
 // =============================================================================
@@ -16,12 +26,12 @@ const INITIALIZED_KEY = "effect-solutions-tasks-initialized"
 const DEFAULT_TASKS = new TaskList({
   tasks: [
     new Task({
-      id: TaskId.makeUnsafe(1),
+      id: TaskId.make(1),
       text: "Run the agent-guided setup",
       done: false,
     }),
     new Task({
-      id: TaskId.makeUnsafe(2),
+      id: TaskId.make(2),
       text: "Become effect-pilled",
       done: false,
     }),
@@ -74,7 +84,7 @@ const browserTaskRepoLayer = Layer.effect(
 // Terminal Output Service (line accumulator)
 // =============================================================================
 
-export class TerminalOutput extends ServiceMap.Service<
+export class TerminalOutput extends Context.Service<
   TerminalOutput,
   {
     readonly log: (...args: ReadonlyArray<unknown>) => Effect.Effect<void>
@@ -86,8 +96,13 @@ export class TerminalOutput extends ServiceMap.Service<
 export const TerminalOutputLive = Layer.sync(TerminalOutput, () => {
   const lines: string[] = []
   return TerminalOutput.of({
-    log: (...args) => Effect.sync(() => { for (const a of args) lines.push(String(a)) }),
-    logSync: (...args) => { for (const a of args) lines.push(String(a)) },
+    log: (...args) =>
+      Effect.sync(() => {
+        for (const a of args) lines.push(String(a))
+      }),
+    logSync: (...args) => {
+      for (const a of args) lines.push(String(a))
+    },
     getLines: Effect.sync(() => [...lines]),
   })
 })
@@ -157,9 +172,7 @@ const mockPathLayer = Path.layer
 const mockStdioLayer = Stdio.layerTest({})
 const mockSpawnerLayer = Layer.succeed(
   ChildProcessSpawner.ChildProcessSpawner,
-  ChildProcessSpawner.make(
-    () => Effect.die("ChildProcessSpawner not available in browser"),
-  ),
+  ChildProcessSpawner.make(() => Effect.die("ChildProcessSpawner not available in browser")),
 )
 
 // Combined browser platform layer (without Terminal - that needs TerminalOutput)

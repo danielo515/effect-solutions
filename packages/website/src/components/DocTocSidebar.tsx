@@ -241,7 +241,6 @@ export function DocTocSidebar({ className, style, title: _title }: DocTocSidebar
   )
 
   const renderedItems = useMemo(() => {
-    const lineInset = railInset
     const lineHeight = railHeight
     const gapHeight = 14 // px gap carved out of the spine
     const minDotPercent = (gapHeight / 2 / lineHeight) * 100
@@ -257,7 +256,7 @@ export function DocTocSidebar({ className, style, title: _title }: DocTocSidebar
       showDot = true,
       showGap = true,
     ) => {
-      const y = lineInset + (percent / 100) * lineHeight
+      const y = RAIL_INSET + (percent / 100) * lineHeight
       const labelOffset = 20
       return (
         <div key={id}>
@@ -336,7 +335,7 @@ export function DocTocSidebar({ className, style, title: _title }: DocTocSidebar
     }
 
     return allItems
-  }, [items, activeId, articleHeight, handleClick, isHoveringNearby, railHeight, railInset])
+  }, [items, activeId, articleHeight, handleClick, isHoveringNearby, railHeight])
 
   if (renderedItems.length === 0) {
     return <aside className={cn("hidden 2xl:block pointer-events-none", className)} style={style} aria-hidden="true" />

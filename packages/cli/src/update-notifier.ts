@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
-import { Console, Effect, Layer, Option, Schema, ServiceMap } from "effect"
+import { Console, Context, Effect, Layer, Option, Schema } from "effect"
 
 const CacheFile = Schema.Struct({
   latest: Schema.String,
@@ -9,11 +9,11 @@ const CacheFile = Schema.Struct({
 })
 type CacheFile = typeof CacheFile.Type
 
-class UpdateCheckError extends Schema.TaggedErrorClass("UpdateCheckError")("UpdateCheckError", {
+class UpdateCheckError extends Schema.TaggedErrorClass<UpdateCheckError>()("UpdateCheckError", {
   cause: Schema.Defect,
 }) {}
 
-export class UpdateNotifier extends ServiceMap.Service<
+export class UpdateNotifier extends Context.Service<
   UpdateNotifier,
   {
     readonly check: (pkgName: string, currentVersion: string) => Effect.Effect<void, UpdateCheckError>
@@ -135,7 +135,7 @@ export class UpdateNotifier extends ServiceMap.Service<
   )
 }
 
-export class UpdateNotifierConfig extends ServiceMap.Service<
+export class UpdateNotifierConfig extends Context.Service<
   UpdateNotifierConfig,
   {
     readonly checkInterval: number

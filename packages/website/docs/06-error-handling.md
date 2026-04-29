@@ -15,7 +15,7 @@ Define domain errors with `Schema.TaggedError`:
 ```typescript
 import { Schema } from "effect"
 
-class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
+class ValidationError extends Schema.TaggedErrorClass<ValidationError>()(
   "ValidationError",
   {
     field: Schema.String,
@@ -23,7 +23,7 @@ class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
   }
 ) {}
 
-class NotFoundError extends Schema.TaggedErrorClass("NotFoundError")(
+class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(
   "NotFoundError",
   {
     resource: Schema.String,
@@ -54,7 +54,7 @@ const error = new ValidationError({
 ```typescript
 import { Effect, Random, Schema } from "effect"
 
-class BadLuck extends Schema.TaggedErrorClass("BadLuck")(
+class BadLuck extends Schema.TaggedErrorClass<BadLuck>()(
   "BadLuck",
   { roll: Schema.Number }
 ) {}
@@ -80,7 +80,7 @@ Handle all errors by providing a fallback effect:
 ```typescript
 import { Effect, Schema } from "effect"
 
-class HttpError extends Schema.TaggedErrorClass("HttpError")(
+class HttpError extends Schema.TaggedErrorClass<HttpError>()(
   "HttpError",
   {
     statusCode: Schema.Number,
@@ -88,7 +88,7 @@ class HttpError extends Schema.TaggedErrorClass("HttpError")(
   }
 ) {}
 
-class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
+class ValidationError extends Schema.TaggedErrorClass<ValidationError>()(
   "ValidationError",
   {
     message: Schema.String,
@@ -101,7 +101,7 @@ const recovered: Effect.Effect<string, never> = program.pipe(
   Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError("Error occurred", error)
-      return `Recovered from ${error.name}`
+      return `Recovered from ${error._tag}`
     })
   )
 )
@@ -114,7 +114,7 @@ Handle specific errors by their `_tag`.
 ```typescript
 import { Effect, Schema } from "effect"
 
-class HttpError extends Schema.TaggedErrorClass("HttpError")(
+class HttpError extends Schema.TaggedErrorClass<HttpError>()(
   "HttpError",
   {
     statusCode: Schema.Number,
@@ -122,7 +122,7 @@ class HttpError extends Schema.TaggedErrorClass("HttpError")(
   }
 ) {}
 
-class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
+class ValidationError extends Schema.TaggedErrorClass<ValidationError>()(
   "ValidationError",
   {
     message: Schema.String,
@@ -130,10 +130,10 @@ class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
 ) {}
 
 const program: Effect.Effect<string, HttpError | ValidationError> =
-  new HttpError({
+  Effect.fail(new HttpError({
     statusCode: 500,
     message: "Internal server error",
-  })
+  }))
 
 const recovered: Effect.Effect<string, ValidationError> = program.pipe(
   Effect.catchTag("HttpError", (error) =>
@@ -152,7 +152,7 @@ Handle multiple error types at once.
 ```typescript
 import { Effect, Schema } from "effect"
 
-class HttpError extends Schema.TaggedErrorClass("HttpError")(
+class HttpError extends Schema.TaggedErrorClass<HttpError>()(
   "HttpError",
   {
     statusCode: Schema.Number,
@@ -160,7 +160,7 @@ class HttpError extends Schema.TaggedErrorClass("HttpError")(
   }
 ) {}
 
-class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
+class ValidationError extends Schema.TaggedErrorClass<ValidationError>()(
   "ValidationError",
   {
     message: Schema.String,
@@ -168,10 +168,10 @@ class ValidationError extends Schema.TaggedErrorClass("ValidationError")(
 ) {}
 
 const program: Effect.Effect<string, HttpError | ValidationError> =
-  new HttpError({
+  Effect.fail(new HttpError({
     statusCode: 500,
     message: "Internal server error",
-  })
+  }))
 
 const recovered: Effect.Effect<string, never> = program.pipe(
   Effect.catchTags({
@@ -211,7 +211,7 @@ Use `Schema.Defect` to wrap unknown errors from external libraries.
 ```typescript
 import { Schema, Effect } from "effect"
 
-class ApiError extends Schema.TaggedErrorClass("ApiError")(
+class ApiError extends Schema.TaggedErrorClass<ApiError>()(
   "ApiError",
   {
     endpoint: Schema.String,

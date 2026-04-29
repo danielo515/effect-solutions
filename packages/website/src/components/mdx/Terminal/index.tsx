@@ -1,9 +1,9 @@
 "use client"
 
-import { KeyValueStore } from "effect/unstable/persistence"
-import type { KeyValueStore as KVS } from "effect/unstable/persistence"
 import { BrowserKeyValueStore } from "@effect/platform-browser"
 import { Effect } from "effect"
+import type { KeyValueStore as KVS } from "effect/unstable/persistence"
+import { KeyValueStore } from "effect/unstable/persistence"
 import { AnimatePresence, motion } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { GITHUB_REPO_URL } from "@/constants/urls"

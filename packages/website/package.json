@@ -14,11 +14,11 @@
     "generate:og": "bun ./scripts/generate-og.ts"
   },
   "dependencies": {
-    "@effect/platform-browser": "beta",
+    "@effect/platform-browser": "4.0.0-beta.57",
     "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/typography": "^0.5.19",
     "@vercel/analytics": "^2.0.1",
-    "effect": "beta",
+    "effect": "4.0.0-beta.57",
     "motion": "^12.38.0",
     "next": "16.1.7",
     "overlayscrollbars": "^2.14.0",
@@ -28,7 +28,7 @@
     "shiki": "^4.0.2"
   },
   "devDependencies": {
-    "@effect/platform-bun": "beta",
+    "@effect/platform-bun": "4.0.0-beta.57",
     "@biomejs/biome": "2.4.7",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/hast": "^3.0.4",

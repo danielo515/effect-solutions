@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { Argument, Command, Flag } from "effect/unstable/cli"
 import { BunRuntime, BunServices } from "@effect/platform-bun"
 import { Effect, FileSystem, pipe } from "effect"
+import { Argument, Command, Flag } from "effect/unstable/cli"
 
 const PACKAGES = {
   website: "@effect-best-practices/website",

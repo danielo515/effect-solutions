@@ -34,12 +34,11 @@ const greet = Command.make("greet", { name, shout }, ({ name, shout }) => {
   return Console.log(shout ? message.toUpperCase() : message)
 })
 
-const cli = Command.run(greet, {
-  name: "greet",
+const program = Command.run(greet, {
   version: "1.0.0"
 })
 
-cli(process.argv).pipe(
+program.pipe(
   Effect.provide(BunServices.layer),
   BunRuntime.runMain
 )
@@ -155,7 +154,7 @@ import { Array, Option, Schema } from "effect"
 const TaskId = Schema.Number.pipe(Schema.brand("TaskId"))
 type TaskId = typeof TaskId.Type
 
-class Task extends Schema.Class("Task")({
+class Task extends Schema.Class<Task>("Task")({
   id: TaskId,
   text: Schema.NonEmptyString,
   done: Schema.Boolean
@@ -165,15 +164,15 @@ class Task extends Schema.Class("Task")({
   }
 }
 
-class TaskList extends Schema.Class("TaskList")({
+class TaskList extends Schema.Class<TaskList>("TaskList")({
   tasks: Schema.Array(Task)
 }) {
   static Json = Schema.fromJsonString(TaskList)
   static empty = new TaskList({ tasks: [] })
 
   get nextId(): TaskId {
-    if (this.tasks.length === 0) return TaskId.makeUnsafe(1)
-    return TaskId.makeUnsafe(Math.max(...this.tasks.map((t) => t.id)) + 1)
+    if (this.tasks.length === 0) return TaskId.make(1)
+    return TaskId.make(Math.max(...this.tasks.map((t) => t.id)) + 1)
   }
 
   add(text: string): [TaskList, Task] {
@@ -185,8 +184,9 @@ class TaskList extends Schema.Class("TaskList")({
     const index = this.tasks.findIndex((t) => t.id === id)
     if (index === -1) return [this, Option.none()]
 
-    const updated = this.tasks[index].toggle()
-    const tasks = Array.modify(this.tasks, index, () => updated)
+    const updated = this.tasks[index]!.toggle()
+    const tasks = [...this.tasks]
+    tasks[index] = updated
     return [new TaskList({ tasks }), Option.some(updated)]
   }
 
@@ -207,12 +207,12 @@ class TaskList extends Schema.Class("TaskList")({
 ### The TaskRepo Service
 
 ```typescript
-import { Array, Effect, FileSystem, Layer, Option, Schema, ServiceMap } from "effect"
+import { Array, Context, Effect, FileSystem, Layer, Option, Schema } from "effect"
 // hide-start
 const TaskId = Schema.Number.pipe(Schema.brand("TaskId"))
 type TaskId = typeof TaskId.Type
 
-class Task extends Schema.Class("Task")({
+class Task extends Schema.Class<Task>("Task")({
   id: TaskId,
   text: Schema.NonEmptyString,
   done: Schema.Boolean
@@ -222,7 +222,7 @@ class Task extends Schema.Class("Task")({
   }
 }
 
-class TaskList extends Schema.Class("TaskList")({
+class TaskList extends Schema.Class<TaskList>("TaskList")({
   tasks: Schema.Array(Task)
 }) {
   static Json = Schema.fromJsonString(TaskList)
@@ -237,25 +237,26 @@ class TaskList extends Schema.Class("TaskList")({
     const index = this.tasks.findIndex((t) => t.id === id)
     if (index === -1) return [this, Option.none()]
     const updated = this.tasks[index]!.toggle()
-    const tasks = Array.modify(this.tasks, index, () => updated)
+    const tasks = [...this.tasks]
+    tasks[index] = updated
     return [new TaskList({ tasks }), Option.some(updated)]
   }
 
   get nextId(): TaskId {
-    if (this.tasks.length === 0) return TaskId.makeUnsafe(1)
-    return TaskId.makeUnsafe(Math.max(...this.tasks.map((t) => t.id)) + 1)
+    if (this.tasks.length === 0) return TaskId.make(1)
+    return TaskId.make(Math.max(...this.tasks.map((t) => t.id)) + 1)
   }
 }
 
 // hide-end
 
-class TaskRepo extends ServiceMap.Service<
+class TaskRepo extends Context.Service<
   TaskRepo,
   {
-    readonly list: (all?: boolean) => Effect.Effect<ReadonlyArray<Task>>
-    readonly add: (text: string) => Effect.Effect<Task>
-    readonly toggle: (id: TaskId) => Effect.Effect<Option.Option<Task>>
-    readonly clear: () => Effect.Effect<void>
+    readonly list: (all?: boolean) => Effect.Effect<ReadonlyArray<Task>, unknown>
+    readonly add: (text: string) => Effect.Effect<Task, unknown>
+    readonly toggle: (id: TaskId) => Effect.Effect<Option.Option<Task>, unknown>
+    readonly clear: () => Effect.Effect<void, unknown>
   }
 >()("TaskRepo") {
   static layer = Layer.effect(
@@ -311,7 +312,7 @@ class TaskRepo extends ServiceMap.Service<
 
 ```typescript
 import { Argument, Command, Flag } from "effect/unstable/cli"
-import { Console, Effect, Option, Schema, ServiceMap } from "effect"
+import { Console, Context, Effect, Option, Schema } from "effect"
 
 // hide-start
 // Minimal stubs to keep this example self-contained for typechecking
@@ -319,7 +320,7 @@ const TaskId = Schema.Number.pipe(Schema.brand("TaskId"))
 type TaskId = typeof TaskId.Type
 type Task = { id: number; text: string; done: boolean }
 
-class TaskRepo extends ServiceMap.Service<
+class TaskRepo extends Context.Service<
   TaskRepo,
   {
     readonly add: (text: string) => Effect.Effect<Task>
@@ -403,15 +404,23 @@ const app = Command.make("tasks", {}).pipe(
 
 ```typescript
 import { BunServices, BunRuntime } from "@effect/platform-bun"
+import { Command } from "effect/unstable/cli"
+import { Context, Effect, Layer } from "effect"
 
-const cli = Command.run(app, {
-  name: "tasks",
+// hide-start
+const app = Command.make("tasks")
+class TaskRepo extends Context.Service<TaskRepo, { readonly clear: () => Effect.Effect<void> }>()("TaskRepo") {
+  static readonly layer = Layer.succeed(TaskRepo, { clear: () => Effect.void })
+}
+// hide-end
+
+const program = Command.run(app, {
   version: "1.0.0"
 })
 
-const mainLayer = Layer.provideMerge(TaskRepo.layer, BunServices.layer)
+const mainLayer = Layer.merge(TaskRepo.layer, BunServices.layer)
 
-cli(process.argv).pipe(Effect.provide(mainLayer), BunRuntime.runMain)
+program.pipe(Effect.provide(mainLayer), BunRuntime.runMain)
 ```
 
 ### Using the CLI
@@ -463,7 +472,7 @@ The tasks persist to `tasks.json`:
 | Flag alias | `Flag.withAlias("v")` |
 | Descriptions | `Argument.withDescription`, `Flag.withDescription`, `Command.withDescription` |
 | Subcommands | `Command.withSubcommands([...])` |
-| Run CLI | `Command.run(cmd, { name, version })` |
+| Run CLI | `Command.run(cmd, { version })` |
 | Platform layer | `BunServices.layer` or `NodeServices.layer` |
 
 For the full API, see the [Effect CLI documentation](https://effect-ts.github.io/effect/docs/cli).
@@ -475,6 +484,7 @@ For the full API, see the [Effect CLI documentation](https://effect-ts.github.io
 Import your version from `package.json` to keep it in sync with your published package:
 
 ```typescript
+// typecheck:skip
 import { Command } from "effect/unstable/cli"
 import pkg from "./package.json" with { type: "json" }
 
@@ -483,7 +493,6 @@ const app = Command.make("tasks")
 // hide-end
 
 const cli = Command.run(app, {
-  name: "tasks",
   version: pkg.version
 })
 ```
