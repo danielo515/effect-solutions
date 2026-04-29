@@ -1,5 +1,11 @@
 # effect-solutions
 
+## 0.5.3
+
+### Patch Changes
+
+- [`67a626f`](https://github.com/kitlangton/effect-solutions/commit/67a626f61c474bdd99b0ee6a44be15aa22d0fa7d) Thanks [@kitlangton](https://github.com/kitlangton)! - pin Effect packages to 4.0.0-beta.59, migrate `ServiceMap.Service` to `Context.Service`, and remove the old `Config.array` example
+
 ## 0.5.2
 
 ### Patch Changes
